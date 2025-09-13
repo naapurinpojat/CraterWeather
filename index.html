@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8">
+  <title>Leaflet kartta</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <style>
+    #map { height: 100vh; width: 100%; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script>
+    // Alustetaan kartta Suomeen
+    const map = L.map('map').setView([62.805918, 23.493791], 8);
+
+    // Taustakartta OpenStreetMapista
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap',
+      maxZoom: 18
+    }).addTo(map);
+
+    // Ladataan GeoJSON-paikat
+    fetch("spots.geojson")
+      .then(res => res.json())
+      .then(data => {
+        L.geoJSON(data, {
+          pointToLayer: (feature, latlng) =>
+            L.circleMarker(latlng, {
+              radius: 8,
+              fillColor: "blue",
+              color: "#000",
+              weight: 1,
+              opacity: 1,
+              fillOpacity: 0.8
+            }).bindPopup(feature.properties.name)
+        }).addTo(map);
+      });
+  </script>
+</body>
+</html>
