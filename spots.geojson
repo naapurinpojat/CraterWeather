@@ -59,6 +59,22 @@
       },
       "geometry": { "type": "Point", "coordinates": [23.853675068738678, 62.99467129902109] }
     },
+                {
+      "type": "Feature",
+      "properties": {
+        "name": "Kuortane Länsiranta",
+        "best_wind_dir": [100, 150]
+      },
+      "geometry": { "type": "Point", "coordinates": [23.46726476499347, 62.80292338492107] }
+    },
+                    {
+      "type": "Feature",
+      "properties": {
+        "name": "Kuortane Länsiranta2",
+        "best_wind_dir": [0, 50]
+      },
+      "geometry": { "type": "Point", "coordinates": [23.46756476499341, 62.80295338492101] }
+    },
             {
       "type": "Feature",
       "properties": {
