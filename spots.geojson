@@ -5,7 +5,7 @@
       "type": "Feature",
       "properties": {
         "name": "Kuortane Kirkkoranta",
-        "best_wind_dir": [180, 320]
+        "best_wind_dir": [180, 235]
       },
       "geometry": { "type": "Point", "coordinates": [23.493791, 62.805918] }
     },
@@ -26,6 +26,15 @@
       },
       "geometry": { "type": "Point", "coordinates": [23.04597, 62.80855] }
     },
+        {
+      "type": "Feature",
+      "properties": {
+        "name": "Rantakylän yleinen uimaranta",
+        "best_wind_dir": [225, 315],
+        "notes": "Kivikkoinen paikka"
+      },
+      "geometry": { "type": "Point", "coordinates": [23.771146097994258, 63.18095156940276] }
+    },
     {
       "type": "Feature",
       "properties": {
@@ -33,6 +42,38 @@
         "best_wind_dir": [140, 320]
       },
       "geometry": { "type": "Point", "coordinates": [22.826124, 62.728842] }
+    },
+        {
+      "type": "Feature",
+      "properties": {
+        "name": "Karvalan Nuorisoseura",
+        "best_wind_dir": [100, 150]
+      },
+      "geometry": { "type": "Point", "coordinates": [23.544879567980402, 63.14561545928816] }
+    },
+            {
+      "type": "Feature",
+      "properties": {
+        "name": "Pynttärin uimaranta",
+        "best_wind_dir": [100, 150]
+      },
+      "geometry": { "type": "Point", "coordinates": [23.853675068738678, 62.99467129902109] }
+    },
+            {
+      "type": "Feature",
+      "properties": {
+        "name": "SFC Koivulehto",
+        "best_wind_dir": [310, 340]
+      },
+      "geometry": { "type": "Point", "coordinates": [23.673266474024693, 63.076764535807996] }
+    },
+           {
+      "type": "Feature",
+      "properties": {
+        "name": "SFC Vieresniemi",
+        "best_wind_dir": [180, 225]
+      },
+      "geometry": { "type": "Point", "coordinates": [23.75635671293303, 63.20512914410822] }
     }
   ]
 }
