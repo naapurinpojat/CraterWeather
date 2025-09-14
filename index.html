@@ -126,15 +126,20 @@
 
     // Build forecast table
     function buildForecastTable(timeseries, bestDirs) {
+      
       const rows = timeseries.slice(0, 12).map(entry => {
-        const t = entry.time.substring(11,16);
+        const t = entry.time;
+        const finnishTime = new Date(t).toLocaleString("fi-FI", {
+          timeZone: "Europe/Helsinki",
+        });
+        console.log(finnishTime);
         const wind = entry.data.instant.details.wind_speed;
         const gust = entry.data.instant.details.wind_speed_of_gust;
         const dir = entry.data.instant.details.wind_from_direction;
         const isGood = wind >= 5 && dir >= bestDirs[0] && dir <= bestDirs[1];
         return `
           <tr class="${isGood ? 'good' : ''}">
-            <td>${t}</td>
+            <td>${finnishTime}</td>
             <td>${wind.toFixed(1)}</td>
             <td>${Math.round(dir)}°</td>
           </tr>`;
