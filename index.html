@@ -159,13 +159,32 @@
       }
 
       geoLayer = L.geoJSON(spotData, {
+            style: function(feature) {
+      // No-surf areas = polygons
+      if (feature.geometry.type === "Polygon" || feature.geometry.type === "MultiPolygon") {
+        return {
+          color: "red",
+          fillColor: "red",
+          fillOpacity: 0.3,
+          weight: 2
+        };
+      }
+    },
+    onEachFeature: function(feature, layer) {
+      if (feature.geometry.type !== "Point") {
+        layer.bindPopup(`<b>No-surf area:</b> ${feature.properties.name || ""}`);
+      }
+    },
         pointToLayer: function(feature, latlng) {
           const marker = L.marker(latlng);
             marker.bindTooltip(feature.properties.name, {
-    permanent: true,
-    direction: "right",
-    className: "spot-label"
-      });
+            permanent: true,
+            direction: "right",
+            className: "spot-label"
+              });
+
+            
+          
           fetchForecast(latlng.lat, latlng.lng).then(data => {
             const timeseries = data.properties.timeseries;
             const current = timeseries[0].data.instant.details;
