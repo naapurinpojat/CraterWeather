@@ -64,6 +64,14 @@
       border-radius: 4px;
       font-size: 14px;
     }
+    .spot-label {
+  font-size: 8px;
+  font-weight: bold;
+  color: #333;
+  background: rgba(252, 236, 203, 0.8);
+  padding: 2px 4px;
+  border-radius: 3px;
+}
     .nav-btn:hover {
       background: #91a8c0;
     }
@@ -153,6 +161,11 @@
       geoLayer = L.geoJSON(spotData, {
         pointToLayer: function(feature, latlng) {
           const marker = L.marker(latlng);
+            marker.bindTooltip(feature.properties.name, {
+    permanent: true,
+    direction: "right",
+    className: "spot-label"
+      });
           fetchForecast(latlng.lat, latlng.lng).then(data => {
             const timeseries = data.properties.timeseries;
             const current = timeseries[0].data.instant.details;

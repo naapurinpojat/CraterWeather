@@ -15,7 +15,7 @@
         "name": "Alajärvi Käpyniemi",
         "best_wind_dir": [100, 140]
       },
-      "geometry": { "type": "Point", "coordinates": [23.86112, 63.02086] }
+      "geometry": { "type": "Point", "coordinates": [23.84929756602116, 63.01710676163627] }
     },
     {
       "type": "Feature",
@@ -82,7 +82,7 @@
       },
       "geometry": {
         "type": "Point",
-        "coordinates": [23.625946012439766, 63.049832065123304]
+        "coordinates": [23.771256931610665, 63.1809407281947]
       }
     },
     {
