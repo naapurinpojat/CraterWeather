@@ -1,5 +1,18 @@
-# surf-app
+# Crater Weather
 
+## Design prequisites
+- Windsurfers needed a clear way to check weather.
+- Knows surf spots.
+- No-go zones
+- Easy application
+- Zero backend
+
+## Adding new spots
+- Open geojson.io and define places
+- update spots.geojson
+
+
+## Development server using BUN
 To install dependencies:
 
 ```bash
