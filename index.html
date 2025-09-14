@@ -100,11 +100,11 @@
     // Create custom SVG arrow marker
     function createWindIcon(direction, speed) {
       let color = "red";
-      if (speed >= 5) color = "green";
-      else if (speed >= 3) color = "orange";
+      if (speed >= 7) color = "green";
+      else if (speed >= 5) color = "orange";
 
       const svg = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30"
              viewBox="0 0 24 24" style="transform: rotate(${direction}deg)">
           <polygon points="12,2 22,22 12,17 2,22" fill="${color}" />
         </svg>`;
