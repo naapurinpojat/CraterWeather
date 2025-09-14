@@ -6,10 +6,31 @@
   <title>Surf Spot Weather</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
-    #map { height: 100vh; }
-
+    #map { height: 97vh; }
+.leaflet-layer,
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out,
+.leaflet-control-attribution {
+    filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+}
+    .overlay-text-bottom {
+    position: absolute;
+    top: 10%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2em;
+    font-weight: bold;
+    color: rgb(84, 101, 255);
+    background-color: rgb(252, 236, 203);
+    border-radius: 20%;
+    padding: 10px;
+    text-shadow: 2px 2px 2px rgba(139, 139, 139, 0.8);
+    z-index: 1000;
+    font-family: 'Tahoma', 'sans-serif';
+    font-size: 24px;
+}
     /* Wind arrow marker */
-    .wind-marker {
+    .wind-marker {  
       width: 24px;
       height: 24px;
       transform-origin: center center;
@@ -43,7 +64,9 @@
 </head>
 <body>
   <div id="map"></div>
+  <div class="overlay-text-bottom"></div>
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script>
     const map = L.map('map').setView([62.939, 23.184], 9);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -71,11 +94,10 @@
 
     // Fetch forecast from Yr.no
     async function fetchForecast(lat, lon) {
-      const res = await fetch(
-        `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${lat}&lon=${lon}`,
-        { headers: { "User-Agent": "surf-app/1.0" } }
+      const res = await axios.get(
+        `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${lat}&lon=${lon}`
       );
-      return res.json();
+      return res.data;
     }
 
     // Build forecast table
@@ -95,39 +117,53 @@
       }).join("");
       return `
         <table class="wind-table">
-          <tr><th>Time</th><th>Wind</th><th>Dir</th></tr>
+          <tr><th>Time</th><th>Wind</th><th>Gust</th><th>Dir</th></tr>
           ${rows}
         </table>`;
     }
 
-    // Load external GeoJSON spots
+    let geoLayer;
+    let spotData; // store loaded GeoJSON
+            var updatestring = '<img id="scaledImage" src = "craterweather.jpg" height="100" alt="Crater Weather"/>';
+            document.querySelector('.overlay-text-bottom').innerHTML = updatestring;
+    // Function to refresh markers
+    async function refreshSpots() {
+      if (!spotData) return;
+
+      if (geoLayer) {
+        map.removeLayer(geoLayer);
+      }
+
+      geoLayer = L.geoJSON(spotData, {
+        pointToLayer: function(feature, latlng) {
+          const marker = L.marker(latlng);
+          fetchForecast(latlng.lat, latlng.lng).then(data => {
+            const timeseries = data.properties.timeseries;
+            const current = timeseries[0].data.instant.details;
+            const wind = current.wind_speed;
+            const dir = current.wind_from_direction;
+            console.log(data);
+
+            marker.setIcon(createWindIcon(dir, wind));
+
+            const table = buildForecastTable(timeseries, feature.properties.best_wind_dir);
+            marker.bindPopup(`<b>${feature.properties.name}</b><br>
+                              Best wind: ${feature.properties.best_wind_dir[0]}°–${feature.properties.best_wind_dir[1]}°<br>
+                              Current: ${wind.toFixed(1)} m/s (${Math.round(dir)}°)<br>
+                              ${table}`);
+          });
+          return marker;
+        }
+      }).addTo(map);
+    }
+
+    // Load spots.geojson once, then refresh every 5 min
     fetch("spots.geojson")
       .then(res => res.json())
       .then(spots => {
-        L.geoJSON(spots, {
-          pointToLayer: function(feature, latlng) {
-            const marker = L.marker(latlng);
-            // fetch forecast & update icon + popup
-            fetchForecast(latlng.lat, latlng.lng).then(data => {
-              const timeseries = data.properties.timeseries;
-              const current = timeseries[0].data.instant.details;
-              const wind = current.wind_speed;
-              const dir = current.wind_from_direction;
-
-              // set wind arrow marker
-              marker.setIcon(createWindIcon(dir, wind));
-
-              // popup with forecast table
-              const table = buildForecastTable(timeseries, feature.properties.best_wind_dir);
-              marker.bindPopup(`<b>${feature.properties.name}</b><br>
-                                Best wind: ${feature.properties.best_wind_dir[0]}°–${feature.properties.best_wind_dir[1]}°<br>
-                                Current: ${wind.toFixed(1)} m/s (${Math.round(dir)}°)<br>
-                                Notes: ${feature.properties.notes}<br>
-                                ${table}`);
-            });
-            return marker;
-          }
-        }).addTo(map);
+        spotData = spots;
+        refreshSpots();
+        setInterval(refreshSpots, 100000); // every 5 min
       });
   </script>
 </body>

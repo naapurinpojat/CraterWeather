@@ -29,11 +29,20 @@
         {
       "type": "Feature",
       "properties": {
+        "name": "Ylipään uimaranta",
+        "best_wind_dir": [0, 40],
+        "notes": "-"
+      },
+      "geometry": { "type": "Point", "coordinates": [23.04597, 62.80855] }
+    },
+        {
+      "type": "Feature",
+      "properties": {
         "name": "Rantakylän yleinen uimaranta",
         "best_wind_dir": [225, 315],
-        "notes": "Kivikkoinen paikka"
+        "notes": "-"
       },
-      "geometry": { "type": "Point", "coordinates": [23.771146097994258, 63.18095156940276] }
+      "geometry": { "type": "Point", "coordinates": [23.625946012439766, 63.049832065123304] }
     },
     {
       "type": "Feature",
