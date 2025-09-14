@@ -26,6 +26,39 @@
       },
       "geometry": { "type": "Point", "coordinates": [23.04597, 62.80855] }
     },
+
+
+            {
+      "type": "Feature",
+      "properties": {
+        "name": "Katajanlahden venesatama",
+        "best_wind_dir": [0, 40],
+        "notes": "Suunnat varmistettava"
+      },
+      "geometry": { "type": "Point", "coordinates": [23.79549383906946, 63.12595840986601] }
+    },
+
+                {
+      "type": "Feature",
+      "properties": {
+        "name": "Lypsinmaan uimaranta",
+        "best_wind_dir": [0, 40],
+        "notes": "Suunnat varmistettava"
+      },
+      "geometry": { "type": "Point", "coordinates": [23.77094230339197, 63.163572271548546] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Uimaranta Lakiksen risteyksen lähellä",
+        "best_wind_dir": [0, 40],
+        "notes": "Suunnat varmistettava"
+      },
+      "geometry": { "type": "Point", "coordinates": [23.792635565474196, 63.11275214234853] }
+    },
+
+
+
         {
       "type": "Feature",
       "properties": {
