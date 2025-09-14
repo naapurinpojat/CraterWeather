@@ -3,16 +3,28 @@
   "features": [
     {
       "type": "Feature",
-      "properties": { "name": "Yyteri", "best_wind_dir": [180, 240] },
-      "geometry": { "type": "Point", "coordinates": [21.6167, 61.5667] }
-    },
-    {
-      "type": "Feature",
       "properties": {
         "name": "Kuortane Kirkkoranta",
         "best_wind_dir": [180, 320]
       },
       "geometry": { "type": "Point", "coordinates": [23.493791, 62.805918] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Alajärvi Käpyniemi",
+        "best_wind_dir": [100, 140]
+      },
+      "geometry": { "type": "Point", "coordinates": [23.86112, 63.02086] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Hirvijärvi veneenlaskupaikka",
+        "best_wind_dir": [100, 140],
+        "notes": "Kivikkoinen paikka"
+      },
+      "geometry": { "type": "Point", "coordinates": [23.04597, 62.80855] }
     },
     {
       "type": "Feature",
