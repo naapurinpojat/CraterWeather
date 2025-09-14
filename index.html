@@ -2,42 +2,144 @@
 <html lang="fi">
 <head>
   <meta charset="UTF-8">
-  <title>Leaflet kartta</title>
+  <title>Surffisää + Yr.no with best wind illustration</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <style>
     #map { height: 100vh; width: 100%; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #aaa; padding: 2px 6px; text-align: center; font-size: 12px; }
+    th { background-color: #eee; }
+    .good { background-color: #c8f7c5; } /* green for good wind & direction */
+    .bad { background-color: #f7c5c5; }  /* red for unsuitable wind or direction */
+    .compass { width: 100px; height: 100px; margin: 5px auto; display: block; }
+    .compass circle { fill: none; stroke: #333; stroke-width: 2; }
+    .compass line { stroke: #aaa; stroke-width: 1; }
+    .compass .range { stroke: green; stroke-width: 4; stroke-linecap: round; }
   </style>
 </head>
 <body>
-  <div id="map"></div>
+<div id="map"></div>
 
-  <script>
-    // Alustetaan kartta Suomeen
-    const map = L.map('map').setView([62.805918, 23.493791], 8);
+<script>
+const map = L.map('map').setView([62, 25], 6);
 
-    // Taustakartta OpenStreetMapista
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap',
-      maxZoom: 18
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap',
+  maxZoom: 18
+}).addTo(map);
+
+function degToCompass(num) {
+  const dirs = ["N","NE","E","SE","S","SW","W","NW"];
+  return dirs[Math.round(num / 45) % 8];
+}
+
+function isWindGood(dir, bestRange) {
+  if (!bestRange || bestRange.length < 2) return true;
+  let [min, max] = bestRange;
+  if (min <= max) return dir >= min && dir <= max;
+  return dir >= min || dir <= max; // wrap-around
+}
+
+// Draw SVG compass showing best wind directions
+function getCompassSVG(bestRange) {
+  if (!bestRange) return '';
+  const [min, max] = bestRange;
+  const cx = 50, cy = 50, r = 45;
+  // Convert degrees to radians for SVG rotation
+  const minRad = (min-90) * Math.PI/180;
+  const maxRad = (max-90) * Math.PI/180;
+
+  // SVG arc coordinates
+  const x1 = cx + r * Math.cos(minRad);
+  const y1 = cy + r * Math.sin(minRad);
+  const x2 = cx + r * Math.cos(maxRad);
+  const y2 = cy + r * Math.sin(maxRad);
+
+  // Large arc flag
+  const largeArc = (max - min + 360) % 360 > 180 ? 1 : 0;
+
+  return `
+  <svg class="compass" viewBox="0 0 100 100">
+    <circle cx="50" cy="50" r="45"></circle>
+    <line x1="50" y1="5" x2="50" y2="95"></line>
+    <line x1="5" y1="50" x2="95" y2="50"></line>
+    <path d="M ${x1} ${y1} A 45 45 0 ${largeArc} 1 ${x2} ${y2}" class="range"></path>
+  </svg>`;
+}
+
+// Load GeoJSON
+fetch("spots.geojson")
+  .then(res => res.json())
+  .then(data => {
+    L.geoJSON(data, {
+      pointToLayer: (feature, latlng) => {
+        const marker = L.circleMarker(latlng, {
+          radius: 8,
+          fillColor: "gray",
+          color: "#000",
+          weight: 1,
+          opacity: 1,
+          fillOpacity: 0.8
+        }).bindPopup("Loading...");
+        marker.on('click', () => showForecast(feature, marker));
+        return marker;
+      }
     }).addTo(map);
+  });
 
-    // Ladataan GeoJSON-paikat
-    fetch("spots.geojson")
-      .then(res => res.json())
-      .then(data => {
-        L.geoJSON(data, {
-          pointToLayer: (feature, latlng) =>
-            L.circleMarker(latlng, {
-              radius: 8,
-              fillColor: "blue",
-              color: "#000",
-              weight: 1,
-              opacity: 1,
-              fillOpacity: 0.8
-            }).bindPopup(feature.properties.name)
-        }).addTo(map);
-      });
-  </script>
+async function showForecast(feature, marker) {
+  const [lon, lat] = feature.geometry.coordinates;
+  const bestDir = feature.properties.best_wind_dir; // e.g., [220,270]
+
+  try {
+    const yrUrl = `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${lat}&lon=${lon}`;
+    const res = await fetch(yrUrl, {
+      headers: { "User-Agent": "surf-weather-app/1.0 your@email.com" }
+    });
+    const data = await res.json();
+
+    // Current wind
+    const current = data.properties.timeseries[0].data.instant.details;
+    const windSpeed = current.wind_speed;
+    const windDirDeg = current.wind_from_direction;
+    const goodWind = windSpeed > 5 && isWindGood(windDirDeg, bestDir);
+
+    marker.setStyle({ fillColor: goodWind ? "green" : "red" });
+
+    // 24h forecast
+    const hourly = data.properties.timeseries.slice(0, 24).map(entry => ({
+      time: entry.time,
+      windSpeed: entry.data.instant.details.wind_speed,
+      windGust: entry.data.instant.details.wind_speed_of_gust || entry.data.instant.details.wind_speed,
+      windDir: entry.data.instant.details.wind_from_direction
+    }));
+
+    const tableHTML = `
+      <b>${feature.properties.name}</b><br>
+      🌬️ Current wind: ${windSpeed.toFixed(1)} m/s ${degToCompass(windDirDeg)} (${windDirDeg}°)<br>
+      ${getCompassSVG(bestDir)}
+      <table>
+        <tr><th>Time</th><th>Wind (m/s)</th><th>Gust (m/s)</th><th>Dir</th></tr>
+        ${hourly.map(f => {
+          const rowGood = f.windSpeed > 5 && isWindGood(f.windDir, bestDir);
+          return `<tr class="${rowGood ? 'good' : 'bad'}">
+            <td>${new Date(f.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
+            <td>${f.windSpeed.toFixed(1)}</td>
+            <td>${f.windGust.toFixed(1)}</td>
+            <td>${degToCompass(f.windDir)} (${f.windDir}°)</td>
+          </tr>`;
+        }).join('')}
+      </table>
+    `;
+
+    marker.setPopupContent(tableHTML).openPopup();
+
+  } catch (err) {
+    marker.setPopupContent(`${feature.properties.name}<br>❌ Failed to load forecast`).openPopup();
+    console.error(err);
+  }
+}
+</script>
 </body>
 </html>
