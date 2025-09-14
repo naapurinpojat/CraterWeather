@@ -117,7 +117,7 @@
       }).join("");
       return `
         <table class="wind-table">
-          <tr><th>Time</th><th>Wind</th><th>Gust</th><th>Dir</th></tr>
+          <tr><th>Time</th><th>Wind</th><th>Dir</th></tr>
           ${rows}
         </table>`;
     }
@@ -150,6 +150,7 @@
             marker.bindPopup(`<b>${feature.properties.name}</b><br>
                               Best wind: ${feature.properties.best_wind_dir[0]}°–${feature.properties.best_wind_dir[1]}°<br>
                               Current: ${wind.toFixed(1)} m/s (${Math.round(dir)}°)<br>
+                              Notes: ${feature.properties.notes}<br>
                               ${table}`);
           });
           return marker;

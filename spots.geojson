@@ -27,55 +27,63 @@
       "geometry": { "type": "Point", "coordinates": [23.04597, 62.80855] }
     },
 
-
-            {
+    {
       "type": "Feature",
       "properties": {
         "name": "Katajanlahden venesatama",
-        "best_wind_dir": [0, 40],
-        "notes": "Suunnat varmistettava"
+        "best_wind_dir": [70, 140],
+        "notes": "-"
       },
-      "geometry": { "type": "Point", "coordinates": [23.79549383906946, 63.12595840986601] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [23.79549383906946, 63.12595840986601]
+      }
     },
 
-                {
+    {
       "type": "Feature",
       "properties": {
         "name": "Lypsinmaan uimaranta",
         "best_wind_dir": [0, 40],
         "notes": "Suunnat varmistettava"
       },
-      "geometry": { "type": "Point", "coordinates": [23.77094230339197, 63.163572271548546] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [23.77094230339197, 63.163572271548546]
+      }
     },
     {
       "type": "Feature",
       "properties": {
         "name": "Uimaranta Lakiksen risteyksen lähellä",
-        "best_wind_dir": [0, 40],
+        "best_wind_dir": [140, 180],
         "notes": "Suunnat varmistettava"
       },
-      "geometry": { "type": "Point", "coordinates": [23.792635565474196, 63.11275214234853] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [23.792635565474196, 63.11275214234853]
+      }
     },
-
-
-
-        {
+    {
       "type": "Feature",
       "properties": {
         "name": "Ylipään uimaranta",
         "best_wind_dir": [0, 40],
         "notes": "-"
       },
-      "geometry": { "type": "Point", "coordinates": [23.04597, 62.80855] }
+      "geometry": { "type": "Point", "coordinates": [23.62608965983335, 63.049813298573774] }
     },
-        {
+    {
       "type": "Feature",
       "properties": {
         "name": "Rantakylän yleinen uimaranta",
         "best_wind_dir": [225, 315],
         "notes": "-"
       },
-      "geometry": { "type": "Point", "coordinates": [23.625946012439766, 63.049832065123304] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [23.625946012439766, 63.049832065123304]
+      }
     },
     {
       "type": "Feature",
@@ -85,53 +93,71 @@
       },
       "geometry": { "type": "Point", "coordinates": [22.826124, 62.728842] }
     },
-        {
+    {
       "type": "Feature",
       "properties": {
         "name": "Karvalan Nuorisoseura",
         "best_wind_dir": [100, 150]
       },
-      "geometry": { "type": "Point", "coordinates": [23.544879567980402, 63.14561545928816] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [23.544879567980402, 63.14561545928816]
+      }
     },
-            {
+    {
       "type": "Feature",
       "properties": {
         "name": "Pynttärin uimaranta",
         "best_wind_dir": [100, 150]
       },
-      "geometry": { "type": "Point", "coordinates": [23.853675068738678, 62.99467129902109] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [23.853675068738678, 62.99467129902109]
+      }
     },
-                {
+    {
       "type": "Feature",
       "properties": {
         "name": "Kuortane Länsiranta",
         "best_wind_dir": [100, 150]
       },
-      "geometry": { "type": "Point", "coordinates": [23.46726476499347, 62.80292338492107] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [23.46726476499347, 62.80292338492107]
+      }
     },
-                    {
+    {
       "type": "Feature",
       "properties": {
         "name": "Kuortane Länsiranta2",
         "best_wind_dir": [0, 50]
       },
-      "geometry": { "type": "Point", "coordinates": [23.46756476499341, 62.80295338492101] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [23.46756476499341, 62.80295338492101]
+      }
     },
-            {
+    {
       "type": "Feature",
       "properties": {
         "name": "SFC Koivulehto",
         "best_wind_dir": [310, 340]
       },
-      "geometry": { "type": "Point", "coordinates": [23.673266474024693, 63.076764535807996] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [23.673266474024693, 63.076764535807996]
+      }
     },
-           {
+    {
       "type": "Feature",
       "properties": {
         "name": "SFC Vieresniemi",
         "best_wind_dir": [180, 225]
       },
-      "geometry": { "type": "Point", "coordinates": [23.75635671293303, 63.20512914410822] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [23.75635671293303, 63.20512914410822]
+      }
     }
   ]
 }
