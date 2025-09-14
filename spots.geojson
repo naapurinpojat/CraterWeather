@@ -1,0 +1,26 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "Yyteri", "best_wind_dir": [180, 240] },
+      "geometry": { "type": "Point", "coordinates": [21.6167, 61.5667] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Kuortane Kirkkoranta",
+        "best_wind_dir": [180, 320]
+      },
+      "geometry": { "type": "Point", "coordinates": [23.493791, 62.805918] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Kyrkkäri paratiisiranta",
+        "best_wind_dir": [140, 320]
+      },
+      "geometry": { "type": "Point", "coordinates": [22.826124, 62.728842] }
+    }
+  ]
+}
