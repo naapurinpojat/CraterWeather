@@ -1,5 +1,9 @@
 # Crater Weather
 
+<img src="craterweather.jpg" width="300" >
+
+ <https://naapurinpojat.github.io/CraterWeather>
+
 ## Design prequisites
 - Windsurfers needed a clear way to check weather.
 - Knows surf spots.
@@ -10,6 +14,9 @@
 ## Adding new spots
 - Open geojson.io and define places
 - update spots.geojson
+
+## Features
+<img src="screenshot.png" width="300" >
 
 
 ## Development server using BUN
