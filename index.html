@@ -241,14 +241,14 @@
             marker.setIcon(createWindIcon(dir, wind, feature.properties.best_wind_dir));
 
             const table = buildForecastTable(timeseries, feature.properties.best_wind_dir);
-            marker.bindPopup(`<b>${feature.properties.name}</b><br>
+            marker.bindPopup(`<b>${feature.properties.name}</b><br><hr>
                               Best wind: ${feature.properties.best_wind_dir[0]}°–${feature.properties.best_wind_dir[1]}°<br>
                               Current wind: ${wind.toFixed(1)} m/s (${Math.round(dir)}°)<br>
                               Current temperature: ${temperature.toFixed(1)} C°)<br>
                               Notes: ${feature.properties.notes}<br>
-                              ${table}<br>
-                              <a class="nav-btn" href="${gmapsUrl}" target="_blank"><img id="scaledImage" src = "map-map-marker-svgrepo-com.svg" height="50" alt="Crater Weather"/></a>
-                              <a class="nav-btn" href="${windyUrl}" target="_blank"><img id="scaledImage" src = "cdnlogo.com_windy.svg" height="50" alt="Crater Weather"/></a>
+                              ${table}<br><hr>
+                              <a class="nav-btn" href="${gmapsUrl}" target="_blank"><img id="scaledImage" src = "map-map-marker-svgrepo-com.svg" height="25" alt="Crater Weather"/></a>
+                              <a class="nav-btn" href="${windyUrl}" target="_blank"><img id="scaledImage" src = "cdnlogo.com_windy.svg" height="25" alt="Crater Weather"/></a>
                               `);
           });
           return marker;
