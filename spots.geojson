@@ -464,7 +464,7 @@
       "type": "Feature",
       "properties": {
         "name": "Lypsinmaan uimaranta",
-        "best_wind_dir": [0, 40],
+        "best_wind_dir": [140, 180],
         "notes": "Suunnat varmistettava"
       },
       "geometry": {
