@@ -476,7 +476,7 @@
       "type": "Feature",
       "properties": {
         "name": "Uimaranta Lakiksen risteyksen lähellä",
-        "best_wind_dir": [140, 180],
+        "best_wind_dir": [70, 140],
         "notes": "Suunnat varmistettava"
       },
       "geometry": {
