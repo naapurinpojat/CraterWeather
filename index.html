@@ -164,7 +164,7 @@
         const gust = entry.data.instant.details.wind_speed_of_gust;
         const dir = entry.data.instant.details.wind_from_direction;
         const temperature = entry.data.instant.details.air_temperature;
-        const isGood = wind >= 5 && wind < 7 && dir >= bestDirs[0] && dir <= bestDirs[1];
+        const isGood = wind >= 5 && wind < 7 && ((dir >= bestDirs[0] && dir <= bestDirs[1]) || (dir >= bestDirs[2] && dir <= bestDirs[3]));
         const isveryGood = wind >= 7 && dir >= bestDirs[0] && dir <= bestDirs[1];
         if (isGood) {
           return `
@@ -248,7 +248,8 @@
 
             const table = buildForecastTable(timeseries, feature.properties.best_wind_dir);
             marker.bindPopup(`<b>${feature.properties.name}</b><br><hr>
-                              Best wind: ${feature.properties.best_wind_dir[0]}°–${feature.properties.best_wind_dir[1]}°<br>
+                              Best wind: ${feature.properties.best_wind_dir[0]}°–${feature.properties.best_wind_dir[1]}°
+                              ${typeof feature.properties.best_wind_dir[2] !== "undefined" ? `and : ${feature.properties.best_wind_dir[2]}°–${feature.properties.best_wind_dir[3]}<br>` : "<br>"}
                               Current wind: ${wind.toFixed(1)} m/s (${Math.round(dir)}°)<br>
                               Current temperature: ${temperature.toFixed(1)} C°)<br>
                               Notes: ${feature.properties.notes}<br>
