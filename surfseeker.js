@@ -176,34 +176,42 @@ ready(() => {
   });
   panel.querySelector('#ssRefresh').onclick = () => refreshSpots();
 
-  // 7) patchaa createWindIcon
-  window.createWindIcon = function(directionFrom, speed, best_dir) {
-    const thr = SPORT_THRESHOLDS[state.sport];
-    const inBest = angleInRange(directionFrom, best_dir[0], best_dir[1]);
+  // 7) patchaa createWindIcon – käytä ympyrä+varsi+nuoli -symbolia
+window.createWindIcon = function(directionFrom, speed, best_dir) {
+  const thr = SPORT_THRESHOLDS[state.sport];
+  const inBest = angleInRange(directionFrom, best_dir[0], best_dir[1]);
 
-    // väri aina FROM-suunnan mukaan
-    let color = '#6e571a';
-    if (speed >= thr.very && inBest) {
-      color = '#28ff45';
-    } else if (speed >= thr.good[0] && speed <= thr.good[1] && inBest) {
-      color = '#b2f2bb';
-    }
+  // väri aina FROM-suunnan mukaan + lajin raja-arvot
+  let color = '#6e571a';
+  if (speed >= thr.very && inBest) {
+    color = '#28ff45';      // erittäin hyvä
+  } else if (speed >= thr.good[0] && speed <= thr.good[1] && inBest) {
+    color = '#b2f2bb';      // hyvä
+  }
 
-    // kulma käyttäjän valinnan mukaan
-    const drawAngle = (state.dirMode === 'to') ? toTO(directionFrom) : directionFrom;
+  // piirtonurkka UI-valinnan mukaan (to/from)
+  const drawAngle = (state.dirMode === 'to') ? toTO(directionFrom) : directionFrom;
 
-    return L.divIcon({
-      className: 'wind-marker',
-      html: `
-        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30"
-             viewBox="0 0 24 24" style="transform: rotate(${drawAngle}deg)">
-          <polygon points="12,2 22,22 12,17 2,22" fill="${color}" />
-          <circle cx="12" cy="12" r="1.5" fill="#222"/>
-        </svg>`,
-      iconSize: [24, 24],
-      iconAnchor: [12, 12],
-    });
-  };
+  return L.divIcon({
+    className: 'wind-marker',
+    html: `
+      <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30"
+           viewBox="0 0 24 24" style="transform: rotate(${drawAngle}deg)">
+        <!-- Kehä -->
+        <path d="M21 12c0 4.9706-4.0294 9-9 9s-9-4.0294-9-9 4.0294-9 9-9 9 4.0294 9 9Z"
+              fill="none" stroke="${color}" stroke-width="2"/>
+        <!-- Varsi -->
+        <path d="M12 8L12 16" stroke="${color}" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- Kärki -->
+        <path d="M15 11L12.087 8.087c-.048-.048-.126-.048-.174 0L9 11"
+              stroke="${color}" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+  });
+};
 
   // 8) eka päivitys
   refreshSpots();
