@@ -433,7 +433,7 @@
       "type": "Feature",
       "properties": {
         "name": "Alajärvi Käpyniemi",
-        "best_wind_dir": [100, 140]
+        "best_wind_dir": [90, 180]
       },
       "geometry": { "type": "Point", "coordinates": [23.84929756602116, 63.01710676163627] }
     },
@@ -528,7 +528,7 @@
       "type": "Feature",
       "properties": {
         "name": "Pynttärin uimaranta",
-        "best_wind_dir": [100, 150]
+        "best_wind_dir": [10, 90]
       },
       "geometry": {
         "type": "Point",
