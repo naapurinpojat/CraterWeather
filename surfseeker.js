@@ -64,7 +64,7 @@ ready(() => {
       <div class="ss-section">
         <div><b>Laji</b></div>
         <div id="ssSportGroup">
-          <span class="chip" data-sport="windsurf">Surf</span>
+          <span class="chip" data-sport="windsurf">Windsurf</span>
           <span class="chip" data-sport="kitesurf">Kitesurf</span>
           <span class="chip" data-sport="kitefoil">Kitefoil</span>
           <span class="chip" data-sport="wingfoil">Wingfoil</span>
