@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Surf Spot Weather</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  < link rel="stylesheet" href="surfseeker.css" />
   <style>
     #map {
       height: 97vh;
@@ -273,6 +274,12 @@
         setInterval(refreshSpots, 1000000); // every 5 min
       });
   </script>
+  // Tee map ja refreshSpots globaaliksi surfseeker.js:lle
+    window.surfApp = { map, refreshSpots };
+  </script>
+
+  <!-- Surfseeker UI -->
+  <script type="module" src="surfseeker.js" defer></script>
 </body>
 
 </html>
