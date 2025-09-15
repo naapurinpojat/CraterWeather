@@ -15,7 +15,7 @@ const SPORT_THRESHOLDS = {
 
 const QUICK_VIEWS = [
   { name: 'Lappajärvi',  c: [63.164, 23.615],        z: 9  },
-  { name: 'Kyrkösjärvi', c: [62.740582, 22.802155],  z: 10 },
+  { name: 'Kyrkösjärvi', c: [62.740, 22.802],        z: 10 },
   { name: 'Vaasa',       c: [63.10, 21.60],          z: 11 },
   { name: 'Tampere',     c: [61.50, 23.80],          z: 10 },
   { name: 'Koko alue',   c: [62.939, 23.184],        z: 9  },
