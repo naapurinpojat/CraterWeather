@@ -3,11 +3,11 @@
 const LS = {
   panelOpen: 'surfseeker_panel_open', // "1" | "0"
   dirMode:   'surfseeker_dir_mode',   // "to" | "from"
-  sport:     'surfseeker_sport',      // "surf" | "kitesurf" | "kitefoil" | "wingfoil"
+  sport:     'surfseeker_sport',      // "windsurf" | "kitesurf" | "kitefoil" | "wingfoil"
 };
 
 const SPORT_THRESHOLDS = {
-  surf:     { good:[5,6.9], very:7,   label:'Surf: hyvä 5–6,9; erittäin hyvä ≥7,0 m/s' },
+  surf:     { good:[5,6.9], very:7,   label:'Windsurf: hyvä 5–6,9; erittäin hyvä ≥7,0 m/s' },
   kitesurf: { good:[6,8.9], very:9,   label:'Kitesurf: hyvä 6–8,9; erittäin hyvä ≥9,0 m/s' },
   kitefoil: { good:[3,5.9], very:6,   label:'Kitefoil: hyvä 3–5,9; erittäin hyvä ≥6,0 m/s' },
   wingfoil: { good:[4,6.9], very:7,   label:'Wingfoil: hyvä 4–6,9; erittäin hyvä ≥7,0 m/s' },
@@ -54,8 +54,8 @@ ready(() => {
     <div class="ss-body" id="ssBody">
       <div class="ss-section">
         <div><b>Nuolen tyyppi</b></div>
-        <label><input type="radio" name="ssDirMode" value="to"> minne tuulee</label>
-        <label style="margin-left:8px;"><input type="radio" name="ssDirMode" value="from"> mistä tuulee</label>
+        <label><input type="radio" name="ssDirMode" value="to"> Minne tuulee</label>
+        <label style="margin-left:8px;"><input type="radio" name="ssDirMode" value="from"> Mistä tuulee</label>
       </div>
 
       <div class="ss-section">
