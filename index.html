@@ -50,6 +50,9 @@
     .wind-table tr.good {
       background-color: #b2f2bb; /* light green */
     }
+    .wind-table tr.verygood {
+      background-color: #28ff45; /* light green */
+    }
     .leaflet-popup-content-wrapper {
       background-color: rgb(252, 236, 203);
     }
@@ -100,7 +103,7 @@
     // Create custom SVG arrow marker
     function createWindIcon(direction, speed, best_dir) {
       
-      let color = "red";
+      let color = "#5b4915";
       if (speed >= 7 && direction >= best_dir[0] && direction <= best_dir[1]) color = "#00ff00";
       else if (speed >= 3 && direction >= best_dir[0] && direction <= best_dir[1]) color = "#008000";
 
@@ -137,13 +140,26 @@
         const wind = entry.data.instant.details.wind_speed;
         const gust = entry.data.instant.details.wind_speed_of_gust;
         const dir = entry.data.instant.details.wind_from_direction;
-        const isGood = wind >= 5 && dir >= bestDirs[0] && dir <= bestDirs[1];
+        const isGood = wind >= 5 && wind < 7 && dir >= bestDirs[0] && dir <= bestDirs[1];
+        const isveryGood = wind >= 7 && dir >= bestDirs[0] && dir <= bestDirs[1];
+        if(isGood){
         return `
           <tr class="${isGood ? 'good' : ''}">
             <td>${finnishTime}</td>
             <td>${wind.toFixed(1)}</td>
             <td>${Math.round(dir)}°</td>
           </tr>`;
+        }
+        else {
+                  return `
+          <tr class="${isveryGood ? 'verygood' : ''}">
+            <td>${finnishTime}</td>
+            <td>${wind.toFixed(1)}</td>
+            <td>${Math.round(dir)}°</td>
+          </tr>`;
+        }
+        
+
       }).join("");
       return `
         <table class="wind-table">
