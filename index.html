@@ -55,6 +55,7 @@
       font-family: 'Consolas', 'sans-serif';
       border: 0px solid #ddd;
       padding: 1px 1px;
+      color:#ddd;
       font-size: 10px;
       text-align: left;
     }
@@ -121,6 +122,38 @@
       attribution: '&copy; OpenStreetMap contributors, Crater Surfers'
     }).addTo(map);
 
+    /**
+ * Returns a smooth color for windsurf conditions based on wind speed (0–15 m/s).
+ * Gradient: dark green → bright green → yellow
+ */
+function windsurfColor(speed) {
+  // Clamp speed between 0 and 15
+  speed = Math.max(0, Math.min(15, speed));
+
+  let r = 0, g = 0, b = 0;
+
+  if (speed <= 5) {
+    // Dark green
+    r = 77;
+    g = 77;
+    b = 77;
+  } else if (speed <= 10) {
+    // Dark green (#003300) → bright green (#00ff00)
+    const t = (speed - 5) / 5; // 0 → 1
+    r = 0;
+    g = Math.round(51 + t * (255 - 51)); // 51 → 255
+    b = 0;
+  } else {
+    // Bright green (#00ff00) → yellow (#ffff00)
+    const t = (speed - 10) / 5; // 0 → 1
+    r = Math.round(0 + t * 255); // 0 → 255
+    g = 255;
+    b = 0;
+  }
+
+  return `#${r.toString(16).padStart(2, "0")}${g
+    .toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+}
     // Create custom SVG arrow marker
     function createWindIcon(direction, speed, best_dir) {
 
@@ -131,9 +164,9 @@
       const svg = `
         <svg xmlns="http://www.w3.org/2000/svg" width="30" fill="none" height="30"
              viewBox="0 0 24 24" style="transform: rotate(${direction + 180}deg)">
-        <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="${color}" stroke-width="2"/>
-<path d="M12 8L12 16" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M15 11L12.087 8.08704V8.08704C12.039 8.03897 11.961 8.03897 11.913 8.08704V8.08704L9 11" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="${windsurfColor(speed)}" stroke-width="2"/>
+<path d="M12 8L12 16" stroke="${windsurfColor(speed)}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M15 11L12.087 8.08704V8.08704C12.039 8.03897 11.961 8.03897 11.913 8.08704V8.08704L9 11" stroke="${windsurfColor(speed)}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         
         
           </svg>`;
@@ -166,27 +199,14 @@
         const temperature = entry.data.instant.details.air_temperature;
         const isGood = wind >= 5 && wind < 7 && ((dir >= bestDirs[0] && dir <= bestDirs[1]) || (dir >= bestDirs[2] && dir <= bestDirs[3]));
         const isveryGood = wind >= 7 && dir >= bestDirs[0] && dir <= bestDirs[1];
-        if (isGood) {
           return `
-          <tr class="${isGood ? 'good' : ''}">
+          <tr style="background-color:${windsurfColor(wind)};">
             <td>${finnishTime.slice(0,-3)}</td>
             <td>${wind.toFixed(1)}</td>
             <td>${gust.toFixed(1)}</td>
             <td>${Math.round(dir)}°</td>
             <td>${temperature.toFixed(1)}</td>
           </tr>`;
-        }
-        else {
-          return `
-          <tr class="${isveryGood ? 'verygood' : ''}">
-            <td>${finnishTime.slice(0,-3)}</td>
-            <td>${wind.toFixed(1)}</td>
-            <td>${gust.toFixed(1)}</td>
-            <td>${Math.round(dir)}°</td>
-            <td>${temperature.toFixed(1)}</td>
-          </tr>`;
-        }
-
 
       }).join("");
       return `
