@@ -578,6 +578,17 @@
         "type": "Point",
         "coordinates": [23.75635671293303, 63.20512914410822]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Itäkylän kylätalon ranta",
+        "best_wind_dir": [180, 225]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [23.716942181239055, 63.222407722035825]
+      }
     }
   ]
 }
