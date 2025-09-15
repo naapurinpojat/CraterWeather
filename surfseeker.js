@@ -7,7 +7,7 @@ const LS = {
 };
 
 const SPORT_THRESHOLDS = {
-  surf:     { good:[5,6.9], very:7,   label:'Windsurf: hyvä 5–6,9; erittäin hyvä ≥7,0 m/s' },
+  windsurf:     { good:[5,6.9], very:7,   label:'Windsurf: hyvä 5–6,9; erittäin hyvä ≥7,0 m/s' },
   kitesurf: { good:[6,8.9], very:9,   label:'Kitesurf: hyvä 6–8,9; erittäin hyvä ≥9,0 m/s' },
   kitefoil: { good:[3,5.9], very:6,   label:'Kitefoil: hyvä 3–5,9; erittäin hyvä ≥6,0 m/s' },
   wingfoil: { good:[4,6.9], very:7,   label:'Wingfoil: hyvä 4–6,9; erittäin hyvä ≥7,0 m/s' },
@@ -61,7 +61,7 @@ ready(() => {
       <div class="ss-section">
         <div><b>Laji</b></div>
         <div id="ssSportGroup">
-          <span class="chip" data-sport="surf">Surf</span>
+          <span class="chip" data-sport="windsurf">Surf</span>
           <span class="chip" data-sport="kitesurf">Kitesurf</span>
           <span class="chip" data-sport="kitefoil">Kitefoil</span>
           <span class="chip" data-sport="wingfoil">Wingfoil</span>
@@ -82,7 +82,7 @@ ready(() => {
   // 2) tila localStoragesta
   const state = {
     dirMode: lsGet(LS.dirMode, 'to'),
-    sport:   lsGet(LS.sport, 'surf'),
+    sport:   lsGet(LS.sport, 'windsurf'),
     open:    lsGet(LS.panelOpen, '1') === '1'
   };
 
