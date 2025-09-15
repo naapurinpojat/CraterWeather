@@ -1,5 +1,30 @@
 // surfseeker.js
 
+// VÄLIAIKAINEN: poista virheelliset LocalStorage-arvot
+(function cleanupLS(){
+  try {
+    const sport = localStorage.getItem('surfseeker_sport');
+    if (sport && !['windsurf','kitesurf','kitefoil','wingfoil'].includes(sport)) {
+      console.warn('Poistetaan virheellinen surfseeker_sport:', sport);
+      localStorage.removeItem('surfseeker_sport');
+    }
+
+    const dir = localStorage.getItem('surfseeker_dir_mode');
+    if (dir && !['to','from'].includes(dir)) {
+      console.warn('Poistetaan virheellinen surfseeker_dir_mode:', dir);
+      localStorage.removeItem('surfseeker_dir_mode');
+    }
+
+    const panel = localStorage.getItem('surfseeker_panel_open');
+    if (panel && !['0','1'].includes(panel)) {
+      console.warn('Poistetaan virheellinen surfseeker_panel_open:', panel);
+      localStorage.removeItem('surfseeker_panel_open');
+    }
+  } catch (e) {
+    console.error('LocalStorage cleanup error', e);
+  }
+})();
+
 const LS = {
   panelOpen: 'surfseeker_panel_open', // "1" | "0"
   dirMode:   'surfseeker_dir_mode',   // "to" | "from"
@@ -15,7 +40,7 @@ const SPORT_THRESHOLDS = {
 
 const QUICK_VIEWS = [
   { name: 'Lappajärvi',  c: [63.164, 23.615],        z: 9  },
-  { name: 'Kyrkösjärvi', c: [62.740, 22.802],        z: 10 },
+  { name: 'Kyrkösjärvi', c: [62.740582, 22.802155],  z: 10 },
   { name: 'Vaasa',       c: [63.10, 21.60],          z: 11 },
   { name: 'Tampere',     c: [61.50, 23.80],          z: 10 },
   { name: 'Koko alue',   c: [62.939, 23.184],        z: 9  },
@@ -64,7 +89,7 @@ ready(() => {
       <div class="ss-section">
         <div><b>Laji</b></div>
         <div id="ssSportGroup">
-          <span class="chip" data-sport="windsurf">Windsurf</span>
+          <span class="chip" data-sport="windsurf">Surf</span>
           <span class="chip" data-sport="kitesurf">Kitesurf</span>
           <span class="chip" data-sport="kitefoil">Kitefoil</span>
           <span class="chip" data-sport="wingfoil">Wingfoil</span>
@@ -88,6 +113,12 @@ ready(() => {
     sport:   lsGet(LS.sport, 'windsurf'),
     open:    lsGet(LS.panelOpen, '1') === '1',
   };
+
+  // normalisoi laji jos virheellinen
+  if (!Object.prototype.hasOwnProperty.call(SPORT_THRESHOLDS, state.sport)) {
+    state.sport = 'windsurf';
+    lsSet(LS.sport, state.sport);
+  }
 
   // 3) minimointi
   const ssToggle = panel.querySelector('#ssToggle');
@@ -122,7 +153,8 @@ ready(() => {
     panel.querySelectorAll('#ssSportGroup .chip').forEach(chip => {
       chip.classList.toggle('active', chip.dataset.sport === state.sport);
     });
-    ssLegend.textContent = SPORT_THRESHOLDS[state.sport].label;
+    const thr = SPORT_THRESHOLDS[state.sport];
+    ssLegend.textContent = thr ? thr.label : '';
   }
   applySportUI();
   panel.querySelector('#ssSportGroup').addEventListener('click', e => {
