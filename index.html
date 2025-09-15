@@ -52,8 +52,9 @@
     .wind-table th,
     .wind-table td {
       font-family: 'Consolas', 'sans-serif';
-      border: 1px solid #ddd;
-      padding: 2px 4px;
+      border: 0px solid #ddd;
+      padding: 1px 1px;
+      font-size: 10px;
       text-align: center;
     }
 
@@ -149,7 +150,7 @@
 
     // Build forecast table
     function buildForecastTable(timeseries, bestDirs) {
-      const rows = timeseries.slice(0, 12).map(entry => {
+      const rows = timeseries.slice(0, 48).map(entry => {
         const t = entry.time;
         const finnishTime = new Date(t).toLocaleString("fi-FI", {
           timeZone: "Europe/Helsinki",
@@ -246,7 +247,9 @@
                               Current wind: ${wind.toFixed(1)} m/s (${Math.round(dir)}°)<br>
                               Current temperature: ${temperature.toFixed(1)} C°)<br>
                               Notes: ${feature.properties.notes}<br>
-                              ${table}<br><hr>
+
+                              <div style="height:300px;overflow:auto;">
+                              ${table}</div><br><hr>
                               <a class="nav-btn" href="${gmapsUrl}" target="_blank"><img id="scaledImage" src = "map-map-marker-svgrepo-com.svg" height="25" alt="Crater Weather"/></a>
                               <a class="nav-btn" href="${windyUrl}" target="_blank"><img id="scaledImage" src = "cdnlogo.com_windy.svg" height="25" alt="Crater Weather"/></a>
                               `);
