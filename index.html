@@ -51,6 +51,7 @@
 
     .wind-table th,
     .wind-table td {
+      font-family: 'Consolas', 'sans-serif';
       border: 1px solid #ddd;
       padding: 2px 4px;
       text-align: center;
@@ -148,13 +149,11 @@
 
     // Build forecast table
     function buildForecastTable(timeseries, bestDirs) {
-
       const rows = timeseries.slice(0, 12).map(entry => {
         const t = entry.time;
         const finnishTime = new Date(t).toLocaleString("fi-FI", {
           timeZone: "Europe/Helsinki",
         });
-        console.log(entry.data.instant.details);
         const wind = entry.data.instant.details.wind_speed;
         const gust = entry.data.instant.details.wind_speed_of_gust;
         const dir = entry.data.instant.details.wind_from_direction;
@@ -248,8 +247,8 @@
                               Current temperature: ${temperature.toFixed(1)} C°)<br>
                               Notes: ${feature.properties.notes}<br>
                               ${table}<br>
-                              <a class="nav-btn" href="${gmapsUrl}" target="_blank">Navigate ➤</a>
-                              <a class="nav-btn" href="${windyUrl}" target="_blank">Windy</a>
+                              <a class="nav-btn" href="${gmapsUrl}" target="_blank"><img id="scaledImage" src = "map-map-marker-svgrepo-com.svg" height="50" alt="Crater Weather"/></a>
+                              <a class="nav-btn" href="${windyUrl}" target="_blank"><img id="scaledImage" src = "cdnlogo.com_windy.svg" height="50" alt="Crater Weather"/></a>
                               `);
           });
           return marker;
@@ -263,7 +262,7 @@
       .then(spots => {
         spotData = spots;
         refreshSpots();
-        setInterval(refreshSpots, 100000); // every 5 min
+        setInterval(refreshSpots, 1000000); // every 5 min
       });
   </script>
 </body>
