@@ -1,36 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Surf Spot Weather</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
-    #map { height: 97vh; }
-.leaflet-layer,
-.leaflet-control-zoom-in,
-.leaflet-control-zoom-out,
-.leaflet-control-attribution {
-    filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
-}
+    #map {
+      height: 97vh;
+    }
+
+    .leaflet-layer,
+    .leaflet-control-zoom-in,
+    .leaflet-control-zoom-out,
+    .leaflet-control-attribution {
+      filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+    }
+
     .overlay-text-bottom {
-    position: absolute;
-    bottom: 0%;
-    left: 80px;
-    transform: translate(-50%, -50%);
-    font-size: 2em;
-    font-weight: bold;
-    color: rgb(84, 101, 255);
-    background-color: rgb(252, 236, 203);
-    border-radius: 20%;
-    padding: 10px;
-    text-shadow: 2px 2px 2px rgba(139, 139, 139, 0.8);
-    z-index: 1000;
-    font-family: 'Tahoma', 'sans-serif';
-    font-size: 24px;
-}
+      position: absolute;
+      bottom: 0%;
+      left: 80px;
+      transform: translate(-50%, -50%);
+      font-size: 2em;
+      font-weight: bold;
+      color: rgb(84, 101, 255);
+      background-color: rgb(252, 236, 203);
+      border-radius: 20%;
+      padding: 10px;
+      text-shadow: 2px 2px 2px rgba(139, 139, 139, 0.8);
+      z-index: 1000;
+      font-family: 'Tahoma', 'sans-serif';
+      font-size: 24px;
+    }
+
     /* Wind arrow marker */
-    .wind-marker {  
+    .wind-marker {
       width: 30px;
       height: 30px;
       transform-origin: center center;
@@ -42,22 +48,29 @@
       width: 100%;
       font-size: 12px;
     }
-    .wind-table th, .wind-table td {
+
+    .wind-table th,
+    .wind-table td {
       border: 1px solid #ddd;
       padding: 2px 4px;
       text-align: center;
     }
+
     .wind-table tr.good {
-      background-color: #b2f2bb; /* light green */
+      background-color: #b2f2bb;
+      /* light green */
     }
+
     .wind-table tr.verygood {
-      background-color: #28ff45; /* light green */
+      background-color: #28ff45;
+      /* light green */
     }
+
     .leaflet-popup-content-wrapper {
       background-color: rgb(252, 236, 203);
     }
 
-        .nav-btn {
+    .nav-btn {
       display: inline-block;
       margin-top: 6px;
       padding: 5px 10px;
@@ -67,29 +80,34 @@
       border-radius: 4px;
       font-size: 14px;
     }
+
     .spot-label {
-  font-size: 8px;
-  font-weight: bold;
-  color: #333;
-  background: rgba(252, 236, 203, 0.8);
-  padding: 2px 4px;
-  border-radius: 3px;
-}
+      font-size: 8px;
+      font-weight: bold;
+      color: #333;
+      background: rgba(252, 236, 203, 0.8);
+      padding: 2px 4px;
+      border-radius: 3px;
+    }
+
     .nav-btn:hover {
       background: #91a8c0;
     }
+
     /* Mobile optimization */
     @media (max-width: 600px) {
       .wind-table {
         font-size: 10px;
       }
+
       .leaflet-popup-content {
         max-width: 250px !important;
       }
     }
   </style>
 </head>
-<body style="background-color:rgb(0, 0, 0)";>
+
+<body style="background-color:rgb(0, 0, 0)" ;>
   <div id="map"></div>
   <div class="overlay-text-bottom"></div>
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -102,7 +120,7 @@
 
     // Create custom SVG arrow marker
     function createWindIcon(direction, speed, best_dir) {
-      
+
       let color = "#6e571a";
       if (speed >= 7 && direction >= best_dir[0] && direction <= best_dir[1]) color = "#00ff00";
       else if (speed >= 3 && direction >= best_dir[0] && direction <= best_dir[1]) color = "#008000";
@@ -130,7 +148,7 @@
 
     // Build forecast table
     function buildForecastTable(timeseries, bestDirs) {
-      
+
       const rows = timeseries.slice(0, 12).map(entry => {
         const t = entry.time;
         const finnishTime = new Date(t).toLocaleString("fi-FI", {
@@ -142,8 +160,8 @@
         const dir = entry.data.instant.details.wind_from_direction;
         const isGood = wind >= 5 && wind < 7 && dir >= bestDirs[0] && dir <= bestDirs[1];
         const isveryGood = wind >= 7 && dir >= bestDirs[0] && dir <= bestDirs[1];
-        if(isGood){
-        return `
+        if (isGood) {
+          return `
           <tr class="${isGood ? 'good' : ''}">
             <td>${finnishTime}</td>
             <td>${wind.toFixed(1)}</td>
@@ -151,14 +169,14 @@
           </tr>`;
         }
         else {
-                  return `
+          return `
           <tr class="${isveryGood ? 'verygood' : ''}">
             <td>${finnishTime}</td>
             <td>${wind.toFixed(1)}</td>
             <td>${Math.round(dir)}°</td>
           </tr>`;
         }
-        
+
 
       }).join("");
       return `
@@ -170,8 +188,8 @@
 
     let geoLayer;
     let spotData; // store loaded GeoJSON
-            var updatestring = '<a href="https://github.com/naapurinpojat/CraterWeather/" target="_blank"><img id="scaledImage" src = "craterweather.jpg" height="100" alt="Crater Weather"/></a>';
-            document.querySelector('.overlay-text-bottom').innerHTML = updatestring;
+    var updatestring = '<a href="https://github.com/naapurinpojat/CraterWeather/" target="_blank"><img id="scaledImage" src = "craterweather.jpg" height="100" alt="Crater Weather"/></a>';
+    document.querySelector('.overlay-text-bottom').innerHTML = updatestring;
     // Function to refresh markers
     async function refreshSpots() {
       if (!spotData) return;
@@ -181,32 +199,32 @@
       }
 
       geoLayer = L.geoJSON(spotData, {
-            style: function(feature) {
-      // No-surf areas = polygons
-      if (feature.geometry.type === "Polygon" || feature.geometry.type === "MultiPolygon") {
-        return {
-          color: "red",
-          fillColor: "red",
-          fillOpacity: 0.3,
-          weight: 2
-        };
-      }
-    },
-    onEachFeature: function(feature, layer) {
-      if (feature.geometry.type !== "Point") {
-        layer.bindPopup(`<b>No-surf area:</b> ${feature.properties.name || ""}`);
-      }
-    },
-        pointToLayer: function(feature, latlng) {
+        style: function (feature) {
+          // No-surf areas = polygons
+          if (feature.geometry.type === "Polygon" || feature.geometry.type === "MultiPolygon") {
+            return {
+              color: "red",
+              fillColor: "red",
+              fillOpacity: 0.3,
+              weight: 2
+            };
+          }
+        },
+        onEachFeature: function (feature, layer) {
+          if (feature.geometry.type !== "Point") {
+            layer.bindPopup(`<b>No-surf area:</b> ${feature.properties.name || ""}`);
+          }
+        },
+        pointToLayer: function (feature, latlng) {
           const marker = L.marker(latlng);
-            marker.bindTooltip(feature.properties.name, {
+          marker.bindTooltip(feature.properties.name, {
             permanent: true,
             direction: "right",
             className: "spot-label"
-              });
+          });
 
-            
-          
+
+
           fetchForecast(latlng.lat, latlng.lng).then(data => {
             const timeseries = data.properties.timeseries;
             const current = timeseries[0].data.instant.details;
@@ -241,4 +259,5 @@
       });
   </script>
 </body>
+
 </html>
