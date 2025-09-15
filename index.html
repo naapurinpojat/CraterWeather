@@ -154,7 +154,6 @@
         const finnishTime = new Date(t).toLocaleString("fi-FI", {
           timeZone: "Europe/Helsinki",
         });
-        console.log(finnishTime);
         const wind = entry.data.instant.details.wind_speed;
         const gust = entry.data.instant.details.wind_speed_of_gust;
         const dir = entry.data.instant.details.wind_from_direction;
@@ -230,8 +229,8 @@
             const current = timeseries[0].data.instant.details;
             const wind = current.wind_speed;
             const dir = current.wind_from_direction;
-            console.log(data);
             const gmapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${latlng.lat},${latlng.lng}`;
+            const windyUrl = `https://www.windy.com/${latlng.lat}/${latlng.lng}/wind?${latlng.lat},${latlng.lng},13`;
 
             marker.setIcon(createWindIcon(dir, wind, feature.properties.best_wind_dir));
 
@@ -242,6 +241,7 @@
                               Notes: ${feature.properties.notes}<br>
                               ${table}<br>
                               <a class="nav-btn" href="${gmapsUrl}" target="_blank">Navigate ➤</a>
+                              <a class="nav-btn" href="${windyUrl}" target="_blank">Windy</a>
                               `);
           });
           return marker;
