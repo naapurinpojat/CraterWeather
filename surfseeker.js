@@ -38,22 +38,22 @@ const SPORT_THRESHOLDS = {
   windsurf: {
     good: [5, 6.9],
     very: 7,
-    label: "Windsurf: hyvä 5–6,9; erittäin hyvä ≥7,0 m/s",
+    label: "Windsurf: hyvä 5-6,9; erittäin hyvä ≥7,0 m/s",
   },
   kitesurf: {
     good: [6, 8.9],
     very: 9,
-    label: "Kitesurf: hyvä 6–8,9; erittäin hyvä ≥9,0 m/s",
+    label: "Kitesurf: hyvä 6-8,9; erittäin hyvä ≥9,0 m/s",
   },
   kitefoil: {
     good: [3, 5.9],
     very: 6,
-    label: "Kitefoil: hyvä 3–5,9; erittäin hyvä ≥6,0 m/s",
+    label: "Kitefoil: hyvä 3-5,9; erittäin hyvä ≥6,0 m/s",
   },
   wingfoil: {
     good: [4, 6.9],
     very: 7,
-    label: "Wingfoil: hyvä 4–6,9; erittäin hyvä ≥7,0 m/s",
+    label: "Wingfoil: hyvä 4-6,9; erittäin hyvä ≥7,0 m/s",
   },
 };
 
@@ -108,7 +108,7 @@ ready(() => {
         </svg>
         <span class="ss-title">Surfseeker</span>
       </div>
-      <button class="ss-toggle nav-btn" id="ssToggle" title="Piilota / näytä" aria-expanded="true">–</button>
+      <button class="ss-toggle nav-btn" id="ssToggle" title="Piilota / näytä" aria-expanded="true">-</button>
     </div>
 
     <div class="ss-body" id="ssBody">
@@ -210,7 +210,7 @@ ready(() => {
   });
   panel.querySelector("#ssRefresh").onclick = () => refreshSpots();
 
-  // 7) patchaa createWindIcon – käytä ympyrä+varsi+nuoli -symbolia
+  // 7) patchaa createWindIcon - käytä ympyrä+varsi+nuoli -symbolia
   window.createWindIcon = function (directionFrom, speed, best_dir) {
     const thr = SPORT_THRESHOLDS[state.sport];
     const inBest = angleInRange(directionFrom, best_dir[0], best_dir[1]);
