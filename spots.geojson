@@ -314,6 +314,20 @@
         "type": "Point",
         "coordinates": [23.716942181239055, 63.222407722035825]
       }
+    },
+   {
+      "type": "Feature",
+      "properties": {
+"name": "Kalajärven uimaranta",
+        "best_wind_dir": [90, 180]
+},
+      "geometry": {
+        "coordinates": [
+          23.11003555703823,
+          62.57366564072706
+        ],
+        "type": "Point"
+      }
     }
   ]
 }
