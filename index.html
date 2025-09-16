@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -117,9 +117,10 @@
         if (speed >= 7 && direction >= best_dir[0] && direction <= best_dir[1])
           color = "#00ff00";
         else if (
-          speed >= 3 &&
-          direction >= best_dir[0] &&
-          direction <= best_dir[1]
+          (speed >= 3 &&
+            direction >= best_dir[0] &&
+            direction <= best_dir[1]) ||
+          (direction >= best_dir[2] && direction <= best_dir[3])
         )
           color = "#008000";
 
@@ -143,7 +144,7 @@
       // Fetch forecast from Yr.no
       async function fetchForecast(lat, lon) {
         const res = await axios.get(
-          `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`,
+          `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`
         );
         return res.data;
       }
@@ -160,10 +161,11 @@
             const gust = entry.data.instant.details.wind_speed_of_gust;
             const dir = entry.data.instant.details.wind_from_direction;
             const temperature = entry.data.instant.details.air_temperature;
-            const isGood =
-              wind >= 5 && wind < 7 && dir >= bestDirs[0] && dir <= bestDirs[1];
-            const isVeryGood =
-              wind >= 7 && dir >= bestDirs[0] && dir <= bestDirs[1];
+            const bestwinddirs =
+              (dir >= bestDirs[0] && dir <= bestDirs[1]) ||
+              (dir >= bestDirs[2] && dir <= bestDirs[3]);
+            const isGood = wind >= 5 && wind < 7 && bestwinddirs;
+            const isVeryGood = wind >= 7 && bestwinddirs;
 
             return `
           <tr class="${isVeryGood ? "verygood" : isGood ? "good" : ""}">
@@ -211,7 +213,7 @@
           onEachFeature: function (feature, layer) {
             if (feature.geometry.type !== "Point") {
               layer.bindPopup(
-                `<b>No-surf area:</b> ${feature.properties.name || ""}`,
+                `<b>No-surf area:</b> ${feature.properties.name || ""}`
               );
             }
           },
@@ -228,18 +230,24 @@
               const windyUrl = `https://www.windy.com/${latlng.lat}/${latlng.lng}/wind?${latlng.lat},${latlng.lng},13`;
 
               marker.setIcon(
-                createWindIcon(dir, wind, feature.properties.best_wind_dir),
+                createWindIcon(dir, wind, feature.properties.best_wind_dir)
               );
               const table = buildForecastTable(
                 timeseries,
-                feature.properties.best_wind_dir,
+                feature.properties.best_wind_dir
               );
 
               marker.bindPopup(`
               <b>${feature.properties.name}</b><br><hr>
-              Best wind: ${feature.properties.best_wind_dir[0]}°–${
-                feature.properties.best_wind_dir[1]
-              }°<br>
+              Best wind: ${
+                feature.properties.best_wind_dir[0]
+              }°–${feature.properties.best_wind_dir[1]}°
+              ${
+                typeof feature.properties.best_wind_dir[2] !==
+                "undefined"
+                  ? `and : ${feature.properties.best_wind_dir[2]}°–${feature.properties.best_wind_dir[3]}<br>`
+                  : "<br>"
+              }
               Current wind: ${wind.toFixed(1)} m/s (${Math.round(dir)}°)<br>
               Current temperature: ${temperature.toFixed(1)} °C<br>
               Notes: ${feature.properties.notes}<br>
