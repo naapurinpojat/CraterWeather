@@ -1,58 +1,90 @@
 // surfseeker.js
 
 // VÄLIAIKAINEN: poista virheelliset LocalStorage-arvot
-(function cleanupLS(){
+(function cleanupLS() {
   try {
-    const sport = localStorage.getItem('surfseeker_sport');
-    if (sport && !['windsurf','kitesurf','kitefoil','wingfoil'].includes(sport)) {
-      console.warn('Poistetaan virheellinen surfseeker_sport:', sport);
-      localStorage.removeItem('surfseeker_sport');
+    const sport = localStorage.getItem("surfseeker_sport");
+    if (
+      sport &&
+      !["windsurf", "kitesurf", "kitefoil", "wingfoil"].includes(sport)
+    ) {
+      console.warn("Poistetaan virheellinen surfseeker_sport:", sport);
+      localStorage.removeItem("surfseeker_sport");
     }
 
-    const dir = localStorage.getItem('surfseeker_dir_mode');
-    if (dir && !['to','from'].includes(dir)) {
-      console.warn('Poistetaan virheellinen surfseeker_dir_mode:', dir);
-      localStorage.removeItem('surfseeker_dir_mode');
+    const dir = localStorage.getItem("surfseeker_dir_mode");
+    if (dir && !["to", "from"].includes(dir)) {
+      console.warn("Poistetaan virheellinen surfseeker_dir_mode:", dir);
+      localStorage.removeItem("surfseeker_dir_mode");
     }
 
-    const panel = localStorage.getItem('surfseeker_panel_open');
-    if (panel && !['0','1'].includes(panel)) {
-      console.warn('Poistetaan virheellinen surfseeker_panel_open:', panel);
-      localStorage.removeItem('surfseeker_panel_open');
+    const panel = localStorage.getItem("surfseeker_panel_open");
+    if (panel && !["0", "1"].includes(panel)) {
+      console.warn("Poistetaan virheellinen surfseeker_panel_open:", panel);
+      localStorage.removeItem("surfseeker_panel_open");
     }
   } catch (e) {
-    console.error('LocalStorage cleanup error', e);
+    console.error("LocalStorage cleanup error", e);
   }
 })();
 
 const LS = {
-  panelOpen: 'surfseeker_panel_open', // "1" | "0"
-  dirMode:   'surfseeker_dir_mode',   // "to" | "from"
-  sport:     'surfseeker_sport',      // "windsurf" | "kitesurf" | "kitefoil" | "wingfoil"
+  panelOpen: "surfseeker_panel_open", // "1" | "0"
+  dirMode: "surfseeker_dir_mode", // "to" | "from"
+  sport: "surfseeker_sport", // "windsurf" | "kitesurf" | "kitefoil" | "wingfoil"
 };
 
 const SPORT_THRESHOLDS = {
-  windsurf: { good: [5, 6.9], very: 7,   label: 'Windsurf: hyvä 5–6,9; erittäin hyvä ≥7,0 m/s' },
-  kitesurf: { good: [6, 8.9], very: 9,   label: 'Kitesurf: hyvä 6–8,9; erittäin hyvä ≥9,0 m/s' },
-  kitefoil: { good: [3, 5.9], very: 6,   label: 'Kitefoil: hyvä 3–5,9; erittäin hyvä ≥6,0 m/s' },
-  wingfoil: { good: [4, 6.9], very: 7,   label: 'Wingfoil: hyvä 4–6,9; erittäin hyvä ≥7,0 m/s' },
+  windsurf: {
+    good: [5, 6.9],
+    very: 7,
+    label: "Windsurf: hyvä 5–6,9; erittäin hyvä ≥7,0 m/s",
+  },
+  kitesurf: {
+    good: [6, 8.9],
+    very: 9,
+    label: "Kitesurf: hyvä 6–8,9; erittäin hyvä ≥9,0 m/s",
+  },
+  kitefoil: {
+    good: [3, 5.9],
+    very: 6,
+    label: "Kitefoil: hyvä 3–5,9; erittäin hyvä ≥6,0 m/s",
+  },
+  wingfoil: {
+    good: [4, 6.9],
+    very: 7,
+    label: "Wingfoil: hyvä 4–6,9; erittäin hyvä ≥7,0 m/s",
+  },
 };
 
 const QUICK_VIEWS = [
-  { name: 'Lappajärvi',  c: [63.164, 23.615],        z: 9  },
-  { name: 'Kyrkösjärvi', c: [62.740582, 22.802155],  z: 10 },
-  { name: 'Vaasa',       c: [63.10, 21.60],          z: 11 },
-  { name: 'Tampere',     c: [61.50, 23.80],          z: 10 },
-  { name: 'Koko alue',   c: [62.939, 23.184],        z: 9  },
+  { name: "Lappajärvi", c: [63.164, 23.615], z: 9 },
+  { name: "Kyrkösjärvi", c: [62.740582, 22.802155], z: 10 },
+  { name: "Vaasa", c: [63.1, 21.6], z: 11 },
+  { name: "Tampere", c: [61.5, 23.8], z: 10 },
+  { name: "Koko alue", c: [62.939, 23.184], z: 9 },
 ];
 
 // apufunktiot
-function lsGet(k, fb) { try { const v = localStorage.getItem(k); return v === null ? fb : v; } catch { return fb; } }
-function lsSet(k, v) { try { localStorage.setItem(k, v); } catch {} }
-const toTO = deg => (deg + 180) % 360;
+function lsGet(k, fb) {
+  try {
+    const v = localStorage.getItem(k);
+    return v === null ? fb : v;
+  } catch {
+    return fb;
+  }
+}
+function lsSet(k, v) {
+  try {
+    localStorage.setItem(k, v);
+  } catch {}
+}
+const toTO = (deg) => (deg + 180) % 360;
 function angleInRange(a, s, e) {
-  a = (a + 360) % 360; s = (s + 360) % 360; e = (e + 360) % 360;
-  return s <= e ? (a >= s && a <= e) : (a >= s || a <= e);
+  a = (a + 360) % 360;
+  s = (s + 360) % 360;
+  e = (e + 360) % 360;
+  return s <= e ? a >= s && a <= e : a >= s || a <= e;
 }
 
 // odotetaan että kartta on valmis
@@ -65,8 +97,8 @@ ready(() => {
   const { map, refreshSpots } = window.surfApp;
 
   // 1) lisää paneeli
-  const panel = document.createElement('div');
-  panel.id = 'surfseeker-panel';
+  const panel = document.createElement("div");
+  panel.id = "surfseeker-panel";
   panel.innerHTML = `
     <div class="ss-header" id="ssHeader">
       <div class="ss-brand">
@@ -109,38 +141,39 @@ ready(() => {
 
   // 2) tila localStoragesta
   const state = {
-    dirMode: lsGet(LS.dirMode, 'to'),
-    sport:   lsGet(LS.sport, 'windsurf'),
-    open:    lsGet(LS.panelOpen, '1') === '1',
+    dirMode: lsGet(LS.dirMode, "to"),
+    sport: lsGet(LS.sport, "windsurf"),
+    open: lsGet(LS.panelOpen, "1") === "1",
   };
 
   // normalisoi laji jos virheellinen
   if (!Object.prototype.hasOwnProperty.call(SPORT_THRESHOLDS, state.sport)) {
-    state.sport = 'windsurf';
+    state.sport = "windsurf";
     lsSet(LS.sport, state.sport);
   }
 
   // 3) minimointi
-  const ssToggle = panel.querySelector('#ssToggle');
-  const ssHeader = panel.querySelector('#ssHeader');
+  const ssToggle = panel.querySelector("#ssToggle");
+  const ssHeader = panel.querySelector("#ssHeader");
   function setCollapsed(collapsed) {
-    panel.classList.toggle('collapsed', collapsed);
-    if (ssToggle) ssToggle.setAttribute('aria-expanded', (!collapsed).toString());
-    lsSet(LS.panelOpen, collapsed ? '0' : '1');
+    panel.classList.toggle("collapsed", collapsed);
+    if (ssToggle)
+      ssToggle.setAttribute("aria-expanded", (!collapsed).toString());
+    lsSet(LS.panelOpen, collapsed ? "0" : "1");
   }
   setCollapsed(!state.open);
-  ssToggle.addEventListener('click', e => {
+  ssToggle.addEventListener("click", (e) => {
     e.stopPropagation();
-    setCollapsed(!panel.classList.contains('collapsed'));
+    setCollapsed(!panel.classList.contains("collapsed"));
   });
-  ssHeader.addEventListener('click', () => {
-    if (panel.classList.contains('collapsed')) setCollapsed(false);
+  ssHeader.addEventListener("click", () => {
+    if (panel.classList.contains("collapsed")) setCollapsed(false);
   });
 
   // 4) dirMode
-  panel.querySelectorAll('input[name=ssDirMode]').forEach(r => {
-    r.checked = (r.value === state.dirMode);
-    r.addEventListener('change', e => {
+  panel.querySelectorAll("input[name=ssDirMode]").forEach((r) => {
+    r.checked = r.value === state.dirMode;
+    r.addEventListener("change", (e) => {
       state.dirMode = e.target.value;
       lsSet(LS.dirMode, state.dirMode);
       refreshSpots();
@@ -148,17 +181,18 @@ ready(() => {
   });
 
   // 5) sport
-  const ssLegend = panel.querySelector('#ssLegend');
+  const ssLegend = panel.querySelector("#ssLegend");
   function applySportUI() {
-    panel.querySelectorAll('#ssSportGroup .chip').forEach(chip => {
-      chip.classList.toggle('active', chip.dataset.sport === state.sport);
+    panel.querySelectorAll("#ssSportGroup .chip").forEach((chip) => {
+      chip.classList.toggle("active", chip.dataset.sport === state.sport);
     });
     const thr = SPORT_THRESHOLDS[state.sport];
-    ssLegend.textContent = thr ? thr.label : '';
+    ssLegend.textContent = thr ? thr.label : "";
   }
   applySportUI();
-  panel.querySelector('#ssSportGroup').addEventListener('click', e => {
-    const chip = e.target.closest('.chip'); if (!chip) return;
+  panel.querySelector("#ssSportGroup").addEventListener("click", (e) => {
+    const chip = e.target.closest(".chip");
+    if (!chip) return;
     state.sport = chip.dataset.sport;
     lsSet(LS.sport, state.sport);
     applySportUI();
@@ -166,35 +200,36 @@ ready(() => {
   });
 
   // 6) pikavalinnat
-  const quickRow = panel.querySelector('#ssQuickRow');
-  QUICK_VIEWS.forEach(q => {
-    const b = document.createElement('button');
-    b.className = 'nav-btn';
+  const quickRow = panel.querySelector("#ssQuickRow");
+  QUICK_VIEWS.forEach((q) => {
+    const b = document.createElement("button");
+    b.className = "nav-btn";
     b.textContent = q.name;
     b.onclick = () => map.setView(q.c, q.z);
     quickRow.appendChild(b);
   });
-  panel.querySelector('#ssRefresh').onclick = () => refreshSpots();
+  panel.querySelector("#ssRefresh").onclick = () => refreshSpots();
 
   // 7) patchaa createWindIcon – käytä ympyrä+varsi+nuoli -symbolia
-window.createWindIcon = function(directionFrom, speed, best_dir) {
-  const thr = SPORT_THRESHOLDS[state.sport];
-  const inBest = angleInRange(directionFrom, best_dir[0], best_dir[1]);
+  window.createWindIcon = function (directionFrom, speed, best_dir) {
+    const thr = SPORT_THRESHOLDS[state.sport];
+    const inBest = angleInRange(directionFrom, best_dir[0], best_dir[1]);
 
-  // väri aina FROM-suunnan mukaan + lajin raja-arvot
-  let color = '#6e571a';
-  if (speed >= thr.very && inBest) {
-    color = '#28ff45';      // erittäin hyvä
-  } else if (speed >= thr.good[0] && speed <= thr.good[1] && inBest) {
-    color = '#b2f2bb';      // hyvä
-  }
+    // väri aina FROM-suunnan mukaan + lajin raja-arvot
+    let color = "#6e571a";
+    if (speed >= thr.very && inBest) {
+      color = "#28ff45"; // erittäin hyvä
+    } else if (speed >= thr.good[0] && speed <= thr.good[1] && inBest) {
+      color = "#b2f2bb"; // hyvä
+    }
 
-  // piirtonurkka UI-valinnan mukaan (to/from)
-  const drawAngle = (state.dirMode === 'to') ? toTO(directionFrom) : directionFrom;
+    // piirtonurkka UI-valinnan mukaan (to/from)
+    const drawAngle =
+      state.dirMode === "to" ? toTO(directionFrom) : directionFrom;
 
-  return L.divIcon({
-    className: 'wind-marker',
-    html: `
+    return L.divIcon({
+      className: "wind-marker",
+      html: `
       <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30"
            viewBox="0 0 24 24" style="transform: rotate(${drawAngle}deg)">
         <!-- Kehä -->
@@ -208,10 +243,10 @@ window.createWindIcon = function(directionFrom, speed, best_dir) {
               stroke="${color}" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round"/>
       </svg>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
-  });
-};
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
+    });
+  };
 
   // 8) eka päivitys
   refreshSpots();
