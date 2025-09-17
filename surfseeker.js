@@ -58,10 +58,10 @@ const SPORT_THRESHOLDS = {
 };
 
 const QUICK_VIEWS = [
-  { name: "Lappajärvi", c: [63.164, 23.615], z: 9 },
-  { name: "Kyrkösjärvi", c: [62.740582, 22.802155], z: 10 },
+  { name: "Lappajärvi", c: [63.164, 23.615], z: 11 },
+  { name: "Kyrkösjärvi", c: [62.740582, 22.802155], z: 11 },
   { name: "Vaasa", c: [63.1, 21.6], z: 11 },
-  { name: "Tampere", c: [61.5, 23.8], z: 10 },
+  { name: "Kalajoki", c: [64.241031,23.820509], z: 10 },
   { name: "Koko alue", c: [62.939, 23.184], z: 9 },
 ];
 
@@ -121,7 +121,7 @@ ready(() => {
       <div class="ss-section">
         <div><b>Laji</b></div>
         <div id="ssSportGroup">
-          <span class="chip" data-sport="windsurf">Surf</span>
+          <span class="chip" data-sport="windsurf">Windsurf</span>
           <span class="chip" data-sport="kitesurf">Kitesurf</span>
           <span class="chip" data-sport="kitefoil">Kitefoil</span>
           <span class="chip" data-sport="wingfoil">Wingfoil</span>
@@ -133,8 +133,6 @@ ready(() => {
         <div><b>Pikavalinnat</b></div>
         <div id="ssQuickRow" class="ss-row"></div>
       </div>
-
-      <button id="ssRefresh" class="nav-btn" style="width:100%;">Päivitä nyt</button>
     </div>
   `;
   document.body.appendChild(panel);
@@ -146,7 +144,6 @@ ready(() => {
     open: lsGet(LS.panelOpen, "1") === "1",
   };
 
-  // normalisoi laji jos virheellinen
   if (!Object.prototype.hasOwnProperty.call(SPORT_THRESHOLDS, state.sport)) {
     state.sport = "windsurf";
     lsSet(LS.sport, state.sport);
@@ -208,22 +205,19 @@ ready(() => {
     b.onclick = () => map.setView(q.c, q.z);
     quickRow.appendChild(b);
   });
-  panel.querySelector("#ssRefresh").onclick = () => refreshSpots();
 
-  // 7) patchaa createWindIcon - käytä ympyrä+varsi+nuoli -symbolia
+  // 7) patchaa createWindIcon
   window.createWindIcon = function (directionFrom, speed, best_dir) {
     const thr = SPORT_THRESHOLDS[state.sport];
     const inBest = angleInRange(directionFrom, best_dir[0], best_dir[1]);
 
-    // väri aina FROM-suunnan mukaan + lajin raja-arvot
     let color = "#6e571a";
     if (speed >= thr.very && inBest) {
-      color = "#28ff45"; // erittäin hyvä
+      color = "#28ff45";
     } else if (speed >= thr.good[0] && speed <= thr.good[1] && inBest) {
-      color = "#b2f2bb"; // hyvä
+      color = "#b2f2bb";
     }
 
-    // piirtonurkka UI-valinnan mukaan (to/from)
     const drawAngle =
       state.dirMode === "to" ? toTO(directionFrom) : directionFrom;
 
@@ -232,13 +226,10 @@ ready(() => {
       html: `
       <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30"
            viewBox="0 0 24 24" style="transform: rotate(${drawAngle}deg)">
-        <!-- Kehä -->
         <path d="M21 12c0 4.9706-4.0294 9-9 9s-9-4.0294-9-9 4.0294-9 9-9 9 4.0294 9 9Z"
               fill="none" stroke="${color}" stroke-width="2"/>
-        <!-- Varsi -->
         <path d="M12 8L12 16" stroke="${color}" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round"/>
-        <!-- Kärki -->
         <path d="M15 11L12.087 8.087c-.048-.048-.126-.048-.174 0L9 11"
               stroke="${color}" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round"/>
