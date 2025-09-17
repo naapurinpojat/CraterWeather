@@ -58,11 +58,10 @@ const SPORT_THRESHOLDS = {
 };
 
 const QUICK_VIEWS = [
-  { name: "Lappajärvi", c: [63.164, 23.615], z: 9 },
-  { name: "Kyrkösjärvi", c: [62.740582, 22.802155], z: 10 },
+  { name: "Lappajärvi", c: [63.147649, 23.732634], z: 10 },
+  { name: "Kyrkösjärvi", c: [62.740582, 22.802155], z: 12 },
   { name: "Vaasa", c: [63.1, 21.6], z: 11 },
-  { name: "Tampere", c: [61.5, 23.8], z: 10 },
-  { name: "Koko alue", c: [62.939, 23.184], z: 9 },
+  { name: "Kalajoki", c: [64.243349, 23.814994], z: 12 },
 ];
 
 // apufunktiot
@@ -133,8 +132,6 @@ ready(() => {
         <div><b>Pikavalinnat</b></div>
         <div id="ssQuickRow" class="ss-row"></div>
       </div>
-
-      <button id="ssRefresh" class="nav-btn" style="width:100%;">Päivitä nyt</button>
     </div>
   `;
   document.body.appendChild(panel);
@@ -203,7 +200,7 @@ ready(() => {
   const quickRow = panel.querySelector("#ssQuickRow");
   QUICK_VIEWS.forEach((q) => {
     const b = document.createElement("button");
-    b.className = "nav-btn";
+    b.className = "chip";
     b.textContent = q.name;
     b.onclick = () => map.setView(q.c, q.z);
     quickRow.appendChild(b);
