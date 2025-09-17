@@ -51,6 +51,7 @@
   overflow-x: auto;  /* Scrollaa jos tulee lisää nappeja */
 }
 
+/* Lajinappi (chip) */
 #surfseeker-panel .chip {
   border: 1px solid #444;
   border-radius: 14px;
@@ -65,6 +66,25 @@
 
 #surfseeker-panel .chip.active {
   background: #4a4a4a;
+}
+
+/* Koordinaattinappi (sininen chip) */
+#surfseeker-panel .coord-chip {
+  border: 1px solid #2578a5;
+  background: #2578a5;
+  color: #fff;
+  border-radius: 14px;
+  padding: 3px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  flex-shrink: 1;
+  white-space: nowrap;
+  margin-right: 4px;
+}
+
+#surfseeker-panel .coord-chip.active {
+  background: #3ba7e6;
+  border-color: #3ba7e6;
 }
 
 #surfseeker-panel .nav-btn {
