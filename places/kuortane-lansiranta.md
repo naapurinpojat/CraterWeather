@@ -1,0 +1,1 @@
+# Kuortane Länsiranta

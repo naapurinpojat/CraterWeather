@@ -1,0 +1,1 @@
+# Rantakylän uimaranta

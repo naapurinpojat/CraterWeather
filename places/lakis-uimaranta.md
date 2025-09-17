@@ -1,0 +1,1 @@
+# Uimaranta Lakiksen risteyksen lähellä

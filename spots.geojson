@@ -155,7 +155,8 @@
       "type": "Feature",
       "properties": {
         "name": "Kuortane Kirkkoranta",
-        "best_wind_dir": [180, 235]
+        "best_wind_dir": [180, 235],
+        "information": "./places/kuortane-kirkkoranta.md"
       },
       "geometry": { "type": "Point", "coordinates": [23.493791, 62.805918] }
     },
@@ -187,7 +188,8 @@
       "properties": {
         "name": "Katajanlahden venesatama",
         "best_wind_dir": [70, 140],
-        "notes": "-"
+        "notes": "-",
+        "information": "./places/karjanlahti-venesatama.md"
       },
       "geometry": {
         "type": "Point",
@@ -200,7 +202,8 @@
       "properties": {
         "name": "Lypsinmaan uimaranta",
         "best_wind_dir": [140, 180],
-        "notes": "Suunnat varmistettava"
+        "notes": "Suunnat varmistettava",
+        "information": "./places/lypsinmaa-uimaranta.md"
       },
       "geometry": {
         "type": "Point",
@@ -212,7 +215,8 @@
       "properties": {
         "name": "Uimaranta Lakiksen risteyksen lähellä",
         "best_wind_dir": [70, 140],
-        "notes": "Suunnat varmistettava"
+        "notes": "Suunnat varmistettava",
+        "information": "./places/lakis-uimaranta.md"
       },
       "geometry": {
         "type": "Point",
@@ -224,7 +228,8 @@
       "properties": {
         "name": "Ylipään uimaranta",
         "best_wind_dir": [0, 40],
-        "notes": "-"
+        "notes": "-",
+        "information": "./places/ylipaan-uimaranta.md"
       },
       "geometry": {
         "type": "Point",
@@ -236,7 +241,8 @@
       "properties": {
         "name": "Rantakylän yleinen uimaranta",
         "best_wind_dir": [225, 315],
-        "notes": "-"
+        "notes": "-",
+        "information": "./places/rantakylan-uimaranta.md"
       },
       "geometry": {
         "type": "Point",
@@ -247,7 +253,8 @@
       "type": "Feature",
       "properties": {
         "name": "Kyrkkäri paratiisiranta",
-        "best_wind_dir": [140, 320]
+        "best_wind_dir": [140, 320],
+        "information": "./places/kyrkkari-paratiisiranta.md"
       },
       "geometry": { "type": "Point", "coordinates": [22.826124, 62.728842] }
     },
@@ -255,7 +262,8 @@
       "type": "Feature",
       "properties": {
         "name": "Karvalan Nuorisoseura",
-        "best_wind_dir": [100, 150]
+        "best_wind_dir": [100, 150],
+        "information": "./places/karvalan-nuorisoseura.md"
       },
       "geometry": {
         "type": "Point",
@@ -266,7 +274,8 @@
       "type": "Feature",
       "properties": {
         "name": "Pynttärin uimaranta",
-        "best_wind_dir": [10, 90]
+        "best_wind_dir": [10, 90],
+        "information": "./places/pynttarin-uimaranta.md"
       },
       "geometry": {
         "type": "Point",
@@ -277,7 +286,8 @@
       "type": "Feature",
       "properties": {
         "name": "Kuortane Länsiranta",
-        "best_wind_dir": [100, 150, 0, 50]
+        "best_wind_dir": [100, 150, 0, 50],
+        "information": "./places/kuortane-lansiranta.md"
       },
       "geometry": {
         "type": "Point",
@@ -288,7 +298,8 @@
       "type": "Feature",
       "properties": {
         "name": "SFC Koivulehto",
-        "best_wind_dir": [310, 340]
+        "best_wind_dir": [310, 340],
+        "information": "./places/sfc-koivulehto.md"
       },
       "geometry": {
         "type": "Point",
@@ -299,7 +310,8 @@
       "type": "Feature",
       "properties": {
         "name": "SFC Vieresniemi",
-        "best_wind_dir": [180, 225]
+        "best_wind_dir": [180, 225],
+        "information": "./places/sfc-vieresniemi.md"
       },
       "geometry": {
         "type": "Point",
@@ -310,7 +322,8 @@
       "type": "Feature",
       "properties": {
         "name": "Itäkylän kylätalon ranta",
-        "best_wind_dir": [180, 225]
+        "best_wind_dir": [180, 225],
+        "information": "./places/itakylan-uimaranta.md"
       },
       "geometry": {
         "type": "Point",
@@ -321,7 +334,8 @@
       "type": "Feature",
       "properties": {
         "name": "Kalajärven uimaranta",
-        "best_wind_dir": [90, 180]
+        "best_wind_dir": [90, 180],
+        "information": "./places/kalajarven-uimaranta.md"
       },
       "geometry": {
         "coordinates": [23.11003555703823, 62.57366564072706],
