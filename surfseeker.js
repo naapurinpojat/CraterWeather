@@ -200,7 +200,7 @@ ready(() => {
   const quickRow = panel.querySelector("#ssQuickRow");
   QUICK_VIEWS.forEach((q) => {
     const b = document.createElement("button");
-    b.className = "nav-btn";
+    b.className = "chip";
     b.textContent = q.name;
     b.onclick = () => map.setView(q.c, q.z);
     quickRow.appendChild(b);
