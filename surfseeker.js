@@ -196,14 +196,15 @@ ready(() => {
   });
 
   // 6) pikavalinnat
-  const quickRow = panel.querySelector("#ssQuickRow");
-  QUICK_VIEWS.forEach((q) => {
-    const b = document.createElement("button");
-    b.className = "chip";
-    b.textContent = q.name;
-    b.onclick = () => map.setView(q.c, q.z);
-    quickRow.appendChild(b);
-  });
+const quickRow = panel.querySelector('#ssQuickRow');
+QUICK_VIEWS.forEach(q => {
+  const b = document.createElement('span'); // käytetään <span>, ei <button>
+  b.className = 'chip';
+  b.textContent = q.name;
+  b.onclick = () => map.setView(q.c, q.z);
+  quickRow.appendChild(b);
+});
+panel.querySelector('#ssRefresh').onclick = () => refreshSpots();
 
   // 7) patchaa createWindIcon
   window.createWindIcon = function (directionFrom, speed, best_dir) {
