@@ -131,7 +131,7 @@ ready(() => {
 
       <div class="ss-section">
         <div><b>Pikavalinnat</b></div>
-        <div id="ssQuickRow" class="ss-row"></div>
+        <div id="ssQuickRow" class="chip"></div>
       </div>
     </div>
   `;
