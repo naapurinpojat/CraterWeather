@@ -58,10 +58,10 @@ const SPORT_THRESHOLDS = {
 };
 
 const QUICK_VIEWS = [
-  { name: "Lappajärvi", c: [63.164, 23.615], z: 9 },
-  { name: "Kyrkösjärvi", c: [62.740582, 22.802155], z: 10 },
+  { name: "Lappajärvi", c: [63.147649, 23.732634], z: 10 },
+  { name: "Kyrkösjärvi", c: [62.740582, 22.802155], z: 12 },
   { name: "Vaasa", c: [63.1, 21.6], z: 11 },
-  { name: "Kalajoki", c: [64.243349, 23.814994], z: 10 },
+  { name: "Kalajoki", c: [64.243349, 23.814994], z: 12 },
 ];
 
 // apufunktiot
