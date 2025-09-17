@@ -14,4 +14,4 @@ Käpyniemen Lomakylä
 Käpyniementie 60. 62940 Hoisko.
 kapyniemen.lomakyla@japo.fi
 
-[Soita 065574470](tel:+358665574470)
+[📞 065574470](tel:+35865574470)
