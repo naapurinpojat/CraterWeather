@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -16,6 +16,28 @@
       .leaflet-control-zoom-out,
       .leaflet-control-attribution {
         filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+      }
+
+      #infoModal {
+        display: none;
+        position: fixed;
+        top: 10%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60%;
+        background: white;
+        border: 1px solid #ccc;
+        padding: 1rem;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        max-height: 70%;
+        overflow-y: auto;
+        z-index: 10000;
+      }
+
+      #infoModalClose {
+        float: right;
+        cursor: pointer;
+        color: red;
       }
 
       .overlay-text-bottom {
@@ -45,6 +67,7 @@
         width: 100%;
         font-size: 12px;
       }
+
       .wind-table th,
       .wind-table td {
         font-family: "Consolas", "sans-serif";
@@ -53,9 +76,11 @@
         font-size: 10px;
         text-align: left;
       }
+
       .wind-table tr.good {
         background-color: #b2f2bb;
       }
+
       .wind-table tr.verygood {
         background-color: #28ff45;
       }
@@ -74,8 +99,33 @@
         border-radius: 4px;
         font-size: 14px;
       }
+
       .nav-btn:hover {
         background: #91a8c0;
+      }
+
+      .tab-buttons {
+        display: flex;
+        margin-bottom: 5px;
+      }
+
+      .tab-buttons button {
+        flex: 1;
+        border: 1px solid #444;
+        border-radius: 14px;
+        padding: 3px 8px;
+        background: #2b2b2b;
+        color: #fff;
+        font-size: 12px;
+        cursor: pointer;
+      }
+
+      .tab-content {
+        display: none;
+      }
+
+      .tab-content.active {
+        display: block;
       }
 
       .spot-label {
@@ -91,6 +141,7 @@
         .wind-table {
           font-size: 10px;
         }
+
         .leaflet-popup-content {
           max-width: 250px !important;
         }
@@ -100,8 +151,13 @@
 
   <body style="background-color: rgb(0, 0, 0)">
     <div id="map"></div>
+    <!-- Modal for extra info -->
+    <div id="infoModal">
+      <span id="infoModalClose">✖</span>
+      <div id="infoContent">Loading…</div>
+    </div>
     <div class="overlay-text-bottom"></div>
-
+    <script src="https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.js"></script>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
@@ -114,15 +170,15 @@
       function isAppleDevice() {
         // Grab the user‑agent string and convert it to lower case for easy matching
         const ua = navigator.userAgent.toLowerCase();
-      
+
         // Look for identifiers that appear only on Apple platforms
-        const isIOS   = /iphone|ipad|ipod/.test(ua);
+        const isIOS = /iphone|ipad|ipod/.test(ua);
         const isMacOS = /macintosh|mac os x/.test(ua);
-      
+
         // Return true if either iOS or macOS is detected
         return isIOS || isMacOS;
       }
-      
+
       // Create custom SVG arrow marker
       function createWindIcon(direction, speed, best_dir) {
         let color = "#6e571a";
@@ -156,7 +212,7 @@
       // Fetch forecast from Yr.no
       async function fetchForecast(lat, lon) {
         const res = await axios.get(
-          `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`
+          `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`,
         );
         return res.data;
       }
@@ -225,7 +281,7 @@
           onEachFeature: function (feature, layer) {
             if (feature.geometry.type !== "Point") {
               layer.bindPopup(
-                `<b>No-surf area:</b> ${feature.properties.name || ""}`
+                `<b>No-surf area:</b> ${feature.properties.name || ""}`,
               );
             }
           },
@@ -243,37 +299,83 @@
               const applemapsUrl = `https://maps.apple.com/?ll=${latlng.lat},${latlng.lng}`;
               let mapsUrl = "";
               if (isAppleDevice()) {
-                 mapsUrl = applemapsUrl;
+                mapsUrl = applemapsUrl;
               } else {
-                 mapsUrl = gmapsUrl;
+                mapsUrl = gmapsUrl;
               }
-              
+
               marker.setIcon(
-                createWindIcon(dir, wind, feature.properties.best_wind_dir)
+                createWindIcon(dir, wind, feature.properties.best_wind_dir),
               );
               const table = buildForecastTable(
                 timeseries,
-                feature.properties.best_wind_dir
+                feature.properties.best_wind_dir,
               );
 
               marker.bindPopup(`
+                                  <div class="popup-tabs">
+        <div class="tab-buttons">
+          <button id="tabInfoBtn">🌪️</button>
+          <button id="tabMoreBtn" data-file="${
+            feature.properties.information
+          }">✍🏽</button>
+        </div>
+        <div id="tabInfo" class="tab-content active">
               <b>${feature.properties.name}</b><br><hr>
-              Best wind: ${
-                feature.properties.best_wind_dir[0]
-              }°–${feature.properties.best_wind_dir[1]}°
+              Best wind: ${feature.properties.best_wind_dir[0]}°–${
+                feature.properties.best_wind_dir[1]
+              }°
               ${
-                typeof feature.properties.best_wind_dir[2] !==
-                "undefined"
+                typeof feature.properties.best_wind_dir[2] !== "undefined"
                   ? `and : ${feature.properties.best_wind_dir[2]}°–${feature.properties.best_wind_dir[3]}<br>`
                   : "<br>"
               }
               Current wind: ${wind.toFixed(1)} m/s (${Math.round(dir)}°)<br>
               Current temperature: ${temperature.toFixed(1)} °C<br>
               Notes: ${feature.properties.notes}<br>
+
               <div style="height:300px;overflow:auto;">${table}</div><br><hr>
               <a class="nav-btn" href="${mapsUrl}" target="_blank"><img src="map-map-marker-svgrepo-com.svg" height="25" alt="Navigate"/></a>
               <a class="nav-btn" href="${windyUrl}" target="_blank"><img src="cdnlogo.com_windy.svg" height="25" alt="Windy"/></a>
-            `);
+                  </div>
+              <div id="tabMore" class="tab-content">
+          <div id="markdownContent" style="height:450px;overflow:auto;">Loading markdown…</div>
+        </div>
+      </div>
+              `);
+
+              marker.on("popupopen", () => {
+                const tabInfoBtn = document.getElementById("tabInfoBtn");
+                const tabMoreBtn = document.getElementById("tabMoreBtn");
+                const tabInfo = document.getElementById("tabInfo");
+                const tabMore = document.getElementById("tabMore");
+                const mdContainer = document.getElementById("markdownContent");
+
+                function activate(tab) {
+                  tabInfo.classList.remove("active");
+                  tabMore.classList.remove("active");
+                  if (tab === "info") tabInfo.classList.add("active");
+                  if (tab === "more") {
+                    tabMore.classList.add("active");
+                    // lazy-load markdown when opening tab
+                    if (!mdContainer.dataset.loaded) {
+                      const file = tabMoreBtn.dataset.file;
+                      fetch(file)
+                        .then((res) => res.text())
+                        .then((md) => {
+                          mdContainer.innerHTML = marked.parse(md);
+                          mdContainer.dataset.loaded = "true";
+                        })
+                        .catch((err) => {
+                          mdContainer.innerHTML = `<p style="color:red">Error: ${err}</p>`;
+                        });
+                    }
+                  }
+                }
+
+                tabInfoBtn.addEventListener("click", () => activate("info"));
+                tabMoreBtn.addEventListener("click", () => activate("more"));
+              });
             });
             return marker;
           },
