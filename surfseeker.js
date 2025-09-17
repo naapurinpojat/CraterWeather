@@ -62,7 +62,6 @@ const QUICK_VIEWS = [
   { name: "Kyrkösjärvi", c: [62.740582, 22.802155], z: 12 },
   { name: "Vaasa", c: [63.1, 21.6], z: 11 },
   { name: "Kalajoki", c: [64.241031,23.820509], z: 13 },
-  { name: "Koko alue", c: [62.939, 23.184], z: 8 },
 ];
 
 // apufunktiot
