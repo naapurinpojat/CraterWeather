@@ -4,19 +4,12 @@
   top: 10px;
   right: 10px;
   z-index: 1000;
-  background: rgba(252, 236, 203, 0.96);
+  background: rgba(252,236,203,0.96);
   border-radius: 10px;
   padding: 8px 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
-  width: 320px; /* Muutettu: riittävä leveys lajinapeille */
-  font-family:
-    system-ui,
-    -apple-system,
-    Segoe UI,
-    Roboto,
-    Helvetica,
-    Arial,
-    sans-serif;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+  width: 240px;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
   font-size: 0.9em;
   user-select: none;
 }
@@ -47,11 +40,10 @@
 #surfseeker-panel .ss-row {
   display: flex;
   gap: 6px;
-  flex-wrap: nowrap; /* Muutettu: napit yhdelle riville */
-  overflow-x: auto;  /* Scrollaa jos tulee lisää nappeja */
+  flex-wrap: wrap;
 }
 
-/* Kaikki painikkeet: laji- ja koordinaattinapit */
+/* Yhtenäinen tyyli kaikille painikkeille (laji + pikavalinnat) */
 #surfseeker-panel .chip {
   border: 1px solid #444;
   border-radius: 14px;
@@ -60,27 +52,11 @@
   color: #fff;
   font-size: 12px;
   cursor: pointer;
-  flex-shrink: 1;
-  white-space: nowrap;
 }
-
 #surfseeker-panel .chip.active {
   background: #4a4a4a;
 }
-
-#surfseeker-panel .nav-btn {
-  display: inline-block;
-  margin-top: 4px;
-  padding: 4px 8px;
-  background: #2b2b2b;
-  color: #fff;
-  text-decoration: none;
-  border-radius: 5px;
-  font-size: 11px;
-  cursor: pointer;
-}
-
-#surfseeker-panel .nav-btn:hover {
+#surfseeker-panel .chip:hover {
   background: #4a4a4a;
 }
 
@@ -93,12 +69,10 @@
   gap: 8px;
   cursor: pointer;
 }
-
 #surfseeker-panel.collapsed .ss-body,
 #surfseeker-panel.collapsed .ss-toggle {
   display: none !important;
 }
-
 #surfseeker-panel.collapsed .ss-header {
   margin: 0;
 }
