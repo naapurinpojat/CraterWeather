@@ -241,11 +241,11 @@
               const gmapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${latlng.lat},${latlng.lng}`;
               const windyUrl = `https://www.windy.com/${latlng.lat}/${latlng.lng}/wind?${latlng.lat},${latlng.lng},13`;
               const applemapsUrl = `https://maps.apple.com/?ll=${latlng.lat},${latlng.lng}`;
-
+              let mapsUrl = "";
               if (isAppleDevice()) {
-                const mapsUrl = applemapsUrl;
+                 mapsUrl = applemapsUrl;
               } else {
-                 const mapsUrl = gmapsUrl;
+                 mapsUrl = gmapsUrl;
               }
               
               marker.setIcon(
