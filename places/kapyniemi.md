@@ -10,4 +10,8 @@ Purjeet voi rigata lähes vesirajassa rantasaunasta lounaaseen. Siinä on tilaa 
 
 Alajärvessä tilaa ajella keskimäärin jopa 2km surffisiivuja. Tervetuloa.
 
-Paavo
+Käpyniemen Lomakylä
+Käpyniementie 60. 62940 Hoisko.
+kapyniemen.lomakyla@japo.fi
+
+[Soita 065574470](tel:+358665574470)
