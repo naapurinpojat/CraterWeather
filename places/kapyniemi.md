@@ -6,7 +6,7 @@ Vanhaltatieltä on viitta Käpyniemen Lomakylä ja Käpyniementietä ajat lomaky
 
 Saunarantaan pääset ajamalla suoraan toimiston ohi, vaikka loppu tie kaartuu oikealle. Saunarannan ohitse kulkeva tie kaartuu vasemmalle ja siihen sopii muutama auto ja peräkärry.
 
-Purjeet voi rigata lähes vesirajassa rantasaunasta lounaaseen. Siinä on tilaa useamman surffarin kamoille. Vesille pääset suoraan siitä nurmikolta. 
+Purjeet voi rigata lähes vesirajassa rantasaunasta lounaaseen. Siinä on tilaa useamman surffarin kamoille. Vesille pääset suoraan siitä nurmikolta.
 
 Rannasta etelään n. 50m on kaksi isoa kiveä, jotka tulee lähelle pintaa. Niitä on varottava. Talpakanniemen kärjessä on kivikko, joka on syytä kiertää kauempaa. Muita pahoja kiviä ei ole. Muualla Alajärvellä voi ajaa muutaman kymmenen m päähän rannasta.
 
