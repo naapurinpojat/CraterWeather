@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -15,7 +15,7 @@
       .leaflet-control-zoom-in,
       .leaflet-control-zoom-out,
       .leaflet-control-attribution {
-        filter: invert(100%) hue-rotate(180deg) saturate(80%) contrast(90%) brightness(40%);
+        filter: brightness(50%);
       }
 
       #infoModal {
@@ -74,7 +74,7 @@
         border: 0;
         padding: 1px 1px;
         font-size: 10px;
-        text-align: left;
+        text-align: center;
       }
 
       .wind-table tr.good {
@@ -160,6 +160,7 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.js"></script>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/suncalc@latest/suncalc.js"></script>
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.6.2/proj4.min.js"
       integrity="sha256-ebt1gKsIy6Xbl/EwA1WPYHgEeCrIlpzr+L9DgMiAQZY="
@@ -171,7 +172,17 @@
       crossorigin="anonymous"
     ></script>
 
-    <script>
+    <script type="module">
+      import { config } from "./config.js";
+      import {
+        windsurfColor,
+        getSunriseSunset,
+        isAppleDevice,
+        getBestWind,
+        createWindIcon,
+        normalizeDegrees,
+      } from "./helpers.js";
+
       var crs = new L.Proj.CRS(
         "EPSG:3067",
         "+proj=utm +zone=35 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
@@ -182,9 +193,9 @@
           ],
           origin: [-548576, 8388608],
           bounds: L.bounds([-548576, 8388608], [1548576, 6291456]),
-        },
+        }
       );
-
+      const { sunrise, sunset } = getSunriseSunset(62.939, 23.184, new Date());
       const map = L.map("map", { crs: crs }).setView([62.939, 23.184], 6);
       var mml = L.tileLayer(
         "https://tiles.kartat.kapsi.fi/peruskartta_3067/{z}/{x}/{y}.jpg",
@@ -193,55 +204,13 @@
           tileSize: 256,
           minZoom: 0,
           maxZoom: 20,
-        },
+        }
       ).addTo(map);
-
-      function isAppleDevice() {
-        // Grab the user‑agent string and convert it to lower case for easy matching
-        const ua = navigator.userAgent.toLowerCase();
-
-        // Look for identifiers that appear only on Apple platforms
-        const isIOS = /iphone|ipad|ipod/.test(ua);
-        const isMacOS = /macintosh|mac os x/.test(ua);
-
-        // Return true if either iOS or macOS is detected
-        return isIOS || isMacOS;
-      }
-
-      // Create custom SVG arrow marker
-      function createWindIcon(direction, speed, best_dir) {
-        let color = "#6e571a";
-        if (speed >= 7 && direction >= best_dir[0] && direction <= best_dir[1])
-          color = "#00ff00";
-        else if (
-          (speed >= 3 &&
-            direction >= best_dir[0] &&
-            direction <= best_dir[1]) ||
-          (direction >= best_dir[2] && direction <= best_dir[3])
-        )
-          color = "#008000";
-
-        const svg = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="30" fill="none" height="30"
-             viewBox="0 0 24 24" style="transform: rotate(${
-               direction + 180
-             }deg)">
-          <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="${color}" stroke-width="2"/>
-          <path d="M12 8L12 16" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M15 11L12.087 8.08704C12.039 8.03897 11.961 8.03897 11.913 8.08704L9 11" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>`;
-        return L.divIcon({
-          className: "wind-marker",
-          html: svg,
-          iconSize: [24, 24],
-          iconAnchor: [12, 12],
-        });
-      }
 
       // Fetch forecast from Yr.no
       async function fetchForecast(lat, lon) {
         const res = await axios.get(
-          `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`,
+          `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`
         );
         return res.data;
       }
@@ -249,29 +218,58 @@
       // Build forecast table
       function buildForecastTable(timeseries, bestDirs) {
         const rows = timeseries
-          .slice(0, 48)
+          .slice(0, config.forecast_how_many_hours)
           .map((entry) => {
+            const entrytime = new Date(entry.time);
             const finnishTime = new Date(entry.time).toLocaleString("fi-FI", {
               timeZone: "Europe/Helsinki",
             });
-            const wind = entry.data.instant.details.wind_speed;
-            const gust = entry.data.instant.details.wind_speed_of_gust;
-            const dir = entry.data.instant.details.wind_from_direction;
-            const temperature = entry.data.instant.details.air_temperature;
-            const bestwinddirs =
-              (dir >= bestDirs[0] && dir <= bestDirs[1]) ||
-              (dir >= bestDirs[2] && dir <= bestDirs[3]);
-            const isGood = wind >= 5 && wind < 7 && bestwinddirs;
-            const isVeryGood = wind >= 7 && bestwinddirs;
+            //console.log(new Date(entry.time).getHours());
+            const hour = new Date(entry.time).getHours();
+            if (hour >= sunrise.getHours() && hour <= sunset.getHours()) {
+              //console.log("Sunrise:", sunrise.getHours(), "Sunset:", sunset.getHours());
+              //console.log("derp");
 
-            return `
-          <tr class="${isVeryGood ? "verygood" : isGood ? "good" : ""}">
-            <td>${finnishTime.slice(0, -3)}</td>
+              const wind = entry.data.instant.details.wind_speed;
+              const gust = entry.data.instant.details.wind_speed_of_gust;
+              const direction = entry.data.instant.details.wind_from_direction;
+              const temperature = entry.data.instant.details.air_temperature;
+              //const bestwinddirs =
+              //  (dir >= bestDirs[0] && dir <= bestDirs[1]) ||
+              //  (dir >= bestDirs[2] && dir <= bestDirs[3]);
+              //const isGood = wind >= 5 && wind < 7 && bestwinddirs;
+              //const isVeryGood = wind >= 7 && bestwinddirs;
+              let bestwinddirs = false;
+              let color = "0";
+              if (bestDirs.length == 2) {
+                bestwinddirs =
+                  direction >= bestDirs[0] && direction <= bestDirs[1];
+              } else if (bestDirs.length == 4) {
+                bestwinddirs =
+                  (direction >= bestDirs[0] && direction <= bestDirs[1]) ||
+                  (direction >= bestDirs[2] && direction <= bestDirs[3]);
+              }
+              if (bestwinddirs) {
+                color = windsurfColor(wind);
+              } else {
+                let color = "0";
+              }
+
+              entrytime.getDay;
+              return `
+          <tr style="background-color:${color};">
+            <td>${entrytime.getDate().toString()}.${(
+                entrytime.getMonth() + 1
+              ).toString()} ${entrytime.getHours().toString()}:${entrytime
+                .getMinutes()
+                .toString()
+                .padStart(2, "0")}</td>
             <td>${wind.toFixed(1)}</td>
             <td>${gust.toFixed(1)}</td>
-            <td>${Math.round(dir)}°</td>
+            <td>${Math.round(direction)}°</td>
             <td>${temperature.toFixed(1)}</td>
           </tr>`;
+            }
           })
           .join("");
 
@@ -310,7 +308,7 @@
           onEachFeature: function (feature, layer) {
             if (feature.geometry.type !== "Point") {
               layer.bindPopup(
-                `<b>No-surf area:</b> ${feature.properties.name || ""}`,
+                `<b>No-surf area:</b> ${feature.properties.name || ""}`
               );
             }
           },
@@ -333,12 +331,29 @@
                 mapsUrl = gmapsUrl;
               }
 
+              const result = getBestWind(
+                timeseries,
+                feature.properties.best_wind_dir,
+                sunrise,
+                sunset
+              );
+              console.log(
+                feature.properties.name + "Best wind:",
+                result.wind,
+                "Best gust:",
+                result.gust
+              );
+
               marker.setIcon(
-                createWindIcon(dir, wind, feature.properties.best_wind_dir),
+                createWindIcon(
+                  dir,
+                  result.wind,
+                  feature.properties.best_wind_dir
+                )
               );
               const table = buildForecastTable(
                 timeseries,
-                feature.properties.best_wind_dir,
+                feature.properties.best_wind_dir
               );
 
               marker.bindPopup(`

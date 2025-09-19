@@ -158,7 +158,10 @@
         "best_wind_dir": [180, 235],
         "information": "./places/kuortane-kirkkoranta.md"
       },
-      "geometry": { "type": "Point", "coordinates": [23.493791, 62.805918] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [23.493791, 62.805918]
+      }
     },
     {
       "type": "Feature",
@@ -180,9 +183,11 @@
         "notes": "Kivikkoinen paikka",
         "information": "./places/hirvijarvi.md"
       },
-      "geometry": { "type": "Point", "coordinates": [23.04597, 62.80855] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [23.04597, 62.80855]
+      }
     },
-
     {
       "type": "Feature",
       "properties": {
@@ -196,7 +201,6 @@
         "coordinates": [23.79549383906946, 63.12595840986601]
       }
     },
-
     {
       "type": "Feature",
       "properties": {
@@ -256,7 +260,10 @@
         "best_wind_dir": [140, 320],
         "information": "./places/kyrkkari-paratiisiranta.md"
       },
-      "geometry": { "type": "Point", "coordinates": [22.826124, 62.728842] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [22.826124, 62.728842]
+      }
     },
     {
       "type": "Feature",

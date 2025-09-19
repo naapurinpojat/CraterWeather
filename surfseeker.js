@@ -58,10 +58,10 @@ const SPORT_THRESHOLDS = {
 };
 
 const QUICK_VIEWS = [
-  { name: "Lappajärvi", c: [63.147649, 23.732634], z: 10 },
-  { name: "Kyrkösjärvi", c: [62.740582, 22.802155], z: 12 },
+  { name: "Lappajärvi", c: [63.147649, 23.732634], z: 8 },
+  { name: "Kyrkösjärvi", c: [62.740582, 22.802155], z: 8 },
   { name: "Vaasa", c: [63.1, 21.6], z: 11 },
-  { name: "Kalajoki", c: [64.243349, 23.814994], z: 12 },
+  { name: "Kalajoki", c: [64.243349, 23.814994], z: 8  },
 ];
 
 // apufunktiot
@@ -94,7 +94,6 @@ function ready(fn) {
 
 ready(() => {
   const { map, refreshSpots } = window.surfApp;
-
   // 1) lisää paneeli
   const panel = document.createElement("div");
   panel.id = "surfseeker-panel";
@@ -205,7 +204,12 @@ ready(() => {
     b.onclick = () => map.setView(q.c, q.z);
     quickRow.appendChild(b);
   });
-  panel.querySelector("#ssRefresh").onclick = () => refreshSpots();
+    document.addEventListener("DOMContentLoaded", () => {
+    const refreshBtn = panel.querySelector("#ssRefresh");
+    if (refreshBtn) {
+      refreshBtn.onclick = () => refreshSpots();
+    }
+  });
 
   // 7) patchaa createWindIcon - käytä ympyrä+varsi+nuoli -symbolia
   window.createWindIcon = function (directionFrom, speed, best_dir) {
@@ -213,7 +217,7 @@ ready(() => {
     const inBest = angleInRange(directionFrom, best_dir[0], best_dir[1]);
 
     // väri aina FROM-suunnan mukaan + lajin raja-arvot
-    let color = "#6e571a";
+    let color = "darkgrey";
     if (speed >= thr.very && inBest) {
       color = "#28ff45"; // erittäin hyvä
     } else if (speed >= thr.good[0] && speed <= thr.good[1] && inBest) {
