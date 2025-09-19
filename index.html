@@ -15,7 +15,7 @@
       .leaflet-control-zoom-in,
       .leaflet-control-zoom-out,
       .leaflet-control-attribution {
-        filter:    contrast(20%);
+        filter: contrast(20%);
       }
 
       #infoModal {
@@ -160,30 +160,40 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.js"></script>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.6.2/proj4.min.js" integrity="sha256-ebt1gKsIy6Xbl/EwA1WPYHgEeCrIlpzr+L9DgMiAQZY=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/proj4leaflet/1.0.2/proj4leaflet.min.js" integrity="sha256-IIb6zlGmoYdKMco2DkshWuX5Oz/d4VSFbOG7x0Zamjo=" crossorigin="anonymous"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.6.2/proj4.min.js"
+      integrity="sha256-ebt1gKsIy6Xbl/EwA1WPYHgEeCrIlpzr+L9DgMiAQZY="
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/proj4leaflet/1.0.2/proj4leaflet.min.js"
+      integrity="sha256-IIb6zlGmoYdKMco2DkshWuX5Oz/d4VSFbOG7x0Zamjo="
+      crossorigin="anonymous"
+    ></script>
 
     <script>
+      var crs = new L.Proj.CRS(
+        "EPSG:3067",
+        "+proj=utm +zone=35 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+        {
+          resolutions: [
+            8192, 4096, 2048, 1024, 512, 256, 128, 64, 32, 16, 8, 4, 2, 1, 0.5,
+            0.25,
+          ],
+          origin: [-548576, 8388608],
+          bounds: L.bounds([-548576, 8388608], [1548576, 6291456]),
+        },
+      );
 
-      var crs = new L.Proj.CRS('EPSG:3067',
-  '+proj=utm +zone=35 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs', {
-  resolutions: [
-    8192, 4096, 2048, 1024, 512, 256, 128,
-	64, 32, 16, 8, 4, 2, 1, 0.5, 0.25
-  ],
-  origin: [-548576, 8388608],
-  bounds: L.bounds([-548576, 8388608], [1548576, 6291456])
-});
-
-      const map = L.map("map",{crs: crs}).setView([62.939, 23.184], 6);
+      const map = L.map("map", { crs: crs }).setView([62.939, 23.184], 6);
       var mml = L.tileLayer(
-      "https://tiles.kartat.kapsi.fi/peruskartta_3067/{z}/{x}/{y}.jpg",
-      {
+        "https://tiles.kartat.kapsi.fi/peruskartta_3067/{z}/{x}/{y}.jpg",
+        {
           attribution: "© Maanmittauslaitos",
           tileSize: 256,
           minZoom: 0,
-          maxZoom: 20
-        }
+          maxZoom: 20,
+        },
       ).addTo(map);
 
       function isAppleDevice() {
