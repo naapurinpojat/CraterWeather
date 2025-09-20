@@ -201,7 +201,7 @@
       "type": "Feature",
       "properties": {
         "name": "Lypsinmaan uimaranta",
-        "best_wind_dir": [140, 180],
+        "best_wind_dir": [170, 300],
         "notes": "Suunnat varmistettava",
         "information": "./places/lypsinmaa-uimaranta.md"
       },
@@ -214,7 +214,7 @@
       "type": "Feature",
       "properties": {
         "name": "Uimaranta Lakiksen risteyksen lähellä",
-        "best_wind_dir": [70, 140],
+        "best_wind_dir": [240, 330],
         "notes": "Suunnat varmistettava",
         "information": "./places/lakis-uimaranta.md"
       },
@@ -227,7 +227,7 @@
       "type": "Feature",
       "properties": {
         "name": "Ylipään uimaranta",
-        "best_wind_dir": [0, 40],
+        "best_wind_dir": [0, 35],
         "notes": "-",
         "information": "./places/ylipaan-uimaranta.md"
       },
@@ -240,7 +240,7 @@
       "type": "Feature",
       "properties": {
         "name": "Rantakylän yleinen uimaranta",
-        "best_wind_dir": [225, 315],
+        "best_wind_dir": [215, 295],
         "notes": "-",
         "information": "./places/rantakylan-uimaranta.md"
       },
@@ -262,7 +262,7 @@
       "type": "Feature",
       "properties": {
         "name": "Karvalan Nuorisoseura",
-        "best_wind_dir": [100, 150],
+        "best_wind_dir": [70, 150],
         "information": "./places/karvalan-nuorisoseura.md"
       },
       "geometry": {
@@ -298,7 +298,7 @@
       "type": "Feature",
       "properties": {
         "name": "SFC Koivulehto",
-        "best_wind_dir": [310, 340],
+        "best_wind_dir": [315, 345],
         "information": "./places/sfc-koivulehto.md"
       },
       "geometry": {
@@ -310,7 +310,7 @@
       "type": "Feature",
       "properties": {
         "name": "SFC Vieresniemi",
-        "best_wind_dir": [180, 225],
+        "best_wind_dir": [180, 230],
         "information": "./places/sfc-vieresniemi.md"
       },
       "geometry": {
@@ -322,7 +322,7 @@
       "type": "Feature",
       "properties": {
         "name": "Itäkylän kylätalon ranta",
-        "best_wind_dir": [180, 225],
+        "best_wind_dir": [180, 230],
         "information": "./places/itakylan-uimaranta.md"
       },
       "geometry": {
