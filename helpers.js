@@ -25,6 +25,7 @@ console.log(normalizeDegrees(-450));   // 2.356194490192345   (≈ 270° → 3π
 export function createWindIcon(direction, speed, bestDirs) {
         let color = "darkgray";
         color = windsurfColor(speed);
+        console.log(color);
         const svg = `
         <svg xmlns="http://www.w3.org/2000/svg" width="30" fill="none" height="30"
              viewBox="0 0 24 24" style="transform: rotate(${
@@ -70,7 +71,7 @@ export function windsurfColor(speed) {
     // Each step corresponds to one integer wind‑speed value.
     // We calculate a *step index* (0‑9) and then linearly interpolate
     // between LIGHT_BLUE and GREEN for that step.
-    const stepIndex = speed; // 0 for speed 6, …, 9 for speed 15
+    const stepIndex = speed-6; // 0 for speed 6, …, 9 for speed 15
     const t = stepIndex / 9; // Normalised 0‑1 across the 10 steps
 
     // Linear interpolation for each channel
