@@ -257,7 +257,7 @@
       "type": "Feature",
       "properties": {
         "name": "Kyrkkäri paratiisiranta",
-        "best_wind_dir": [140, 320],
+        "best_wind_dir": [200, 320],
         "information": "./places/kyrkkari-paratiisiranta.md"
       },
       "geometry": {
