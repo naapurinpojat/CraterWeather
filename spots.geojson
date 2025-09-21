@@ -245,7 +245,7 @@
       "properties": {
         "name": "Rantakylän yleinen uimaranta",
         "best_wind_dir": [215, 295],
-        "notes": "-",
+        "notes": "Eli ns. Sahi",
         "information": "./places/rantakylan-uimaranta.md"
       },
       "geometry": {
