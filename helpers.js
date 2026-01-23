@@ -15,6 +15,23 @@ export function normalizeDegrees(deg) {
   return normalizedDeg;
 }
 
+/**
+ * Checks if a wind direction is within a target range, handling crossing North (360/0).
+ *
+ * @param {number} dir - Current wind direction (0-360).
+ * @param {number} min - Start of optimal range.
+ * @param {number} max - End of optimal range.
+ * @returns {boolean}
+ */
+export function isWindInDir(dir, min, max) {
+  if (min <= max) {
+    return dir >= min && dir <= max;
+  } else {
+    // Range crosses North (e.g. 350 to 10)
+    return dir >= min || dir <= max;
+  }
+}
+
 /* Example usage */
 console.log(normalizeDegrees(0));      // 0
 console.log(normalizeDegrees(90));     // 1.5707963267948966  (π/2)
@@ -23,25 +40,24 @@ console.log(normalizeDegrees(720));    // 0                    (two full turns)
 console.log(normalizeDegrees(-450));   // 2.356194490192345   (≈ 270° → 3π/2)
 
 export function createWindIcon(direction, speed, bestDirs) {
-        let color = "darkgray";
-        color = windsurfColor(speed);
-        console.log(color);
-        const svg = `
+  let color = "darkgray";
+  color = windsurfColor(speed);
+  console.log(color);
+  const svg = `
         <svg xmlns="http://www.w3.org/2000/svg" width="30" fill="none" height="30"
-             viewBox="0 0 24 24" style="transform: rotate(${
-               direction + 180
-             }deg)">
+             viewBox="0 0 24 24" style="transform: rotate(${direction + 180
+    }deg)">
           <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="${color}" stroke-width="2"/>
           <path d="M12 8L12 16" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M15 11L12.087 8.08704C12.039 8.03897 11.961 8.03897 11.913 8.08704L9 11" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>`;
-        return L.divIcon({
-          className: "wind-marker",
-          html: svg,
-          iconSize: [24, 24],
-          iconAnchor: [12, 12],
-        });
-      }
+  return L.divIcon({
+    className: "wind-marker",
+    html: svg,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+  });
+}
 
 export function windsurfColor(speed) {
   // -----------------------------------------------------------------
@@ -71,7 +87,7 @@ export function windsurfColor(speed) {
     // Each step corresponds to one integer wind‑speed value.
     // We calculate a *step index* (0‑9) and then linearly interpolate
     // between LIGHT_BLUE and GREEN for that step.
-    const stepIndex = speed-6; // 0 for speed 6, …, 9 for speed 15
+    const stepIndex = speed - 6; // 0 for speed 6, …, 9 for speed 15
     const t = stepIndex / 9; // Normalised 0‑1 across the 10 steps
 
     // Linear interpolation for each channel
@@ -95,11 +111,18 @@ export function windsurfColor(speed) {
 
 export function getSunriseSunset(lat, lon, date = new Date()) {
   const times = SunCalc.getTimes(date, lat, lon);
-  // times.sunrise, times.sunset are JavaScript Date objects in UTC (unless local date)?
-  // The returned Date is in local time of the environment when you format it
+  // times.sunrise, times.sunset are JavaScript Date objects
+
+  // Add 1 hour tolerance
+  const sunrise = new Date(times.sunrise);
+  sunrise.setHours(sunrise.getHours() - 1);
+
+  const sunset = new Date(times.sunset);
+  sunset.setHours(sunset.getHours() + 1);
+
   return {
-    sunrise: times.sunrise,
-    sunset: times.sunset,
+    sunrise: sunrise,
+    sunset: sunset,
   };
 }
 
@@ -128,10 +151,14 @@ export function getBestWind(timeseries, bestDirs, sunrise, sunset) {
       const gust = entry.data.instant.details.wind_speed_of_gust;
       const dir = entry.data.instant.details.wind_from_direction;
 
-      // optional: check if wind direction is within bestDirs
-      const bestwinddirs =
-        (dir >= bestDirs[0] && dir <= bestDirs[1]) ||
-        (dir >= bestDirs[2] && dir <= bestDirs[3]);
+      // check if wind direction is within bestDirs
+      let bestwinddirs = false;
+      if (bestDirs.length >= 2) {
+        bestwinddirs = isWindInDir(dir, bestDirs[0], bestDirs[1]);
+      }
+      if (!bestwinddirs && bestDirs.length >= 4) {
+        bestwinddirs = isWindInDir(dir, bestDirs[2], bestDirs[3]);
+      }
 
       if (bestwinddirs) {
         if (wind > maxWind) maxWind = wind;
