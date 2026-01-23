@@ -181,6 +181,7 @@
       createWindIcon,
       normalizeDegrees,
       isWindInDir,
+      createWindSectorSVG,
     } from "./helpers.js";
 
     var crs = new L.Proj.CRS(
@@ -353,6 +354,8 @@
               feature.properties.best_wind_dir
             );
 
+            const windSectorSVG = createWindSectorSVG(feature.properties.best_wind_dir);
+
             marker.bindPopup(`
                                   <div class="popup-tabs">
         <div class="tab-buttons">
@@ -362,12 +365,17 @@
         </div>
         <div id="tabInfo" class="tab-content active">
               <b>${feature.properties.name}</b><br><hr>
-              Best wind: ${feature.properties.best_wind_dir[0]}°–${feature.properties.best_wind_dir[1]
-              }°
-              ${typeof feature.properties.best_wind_dir[2] !== "undefined"
-                ? `and : ${feature.properties.best_wind_dir[2]}°–${feature.properties.best_wind_dir[3]}<br>`
-                : "<br>"
+              <div style="display:flex; align-items:center; justify-content: space-between;">
+                  <div>
+                    Best wind: ${feature.properties.best_wind_dir[0]}°–${feature.properties.best_wind_dir[1]}°
+                    ${typeof feature.properties.best_wind_dir[2] !== "undefined"
+                ? `<br>and : ${feature.properties.best_wind_dir[2]}°–${feature.properties.best_wind_dir[3]}`
+                : ""
               }
+                  </div>
+                  <div>${windSectorSVG}</div>
+              </div>
+              <br>
               Current wind: ${wind.toFixed(1)} m/s (${Math.round(dir)}°)<br>
               Current temperature: ${temperature.toFixed(1)} °C<br>
               Notes: ${feature.properties.notes}<br>
@@ -428,6 +436,48 @@
         refreshSpots();
         setInterval(refreshSpots, 1000000);
       });
+
+    // Handle map clicks
+    map.on('click', function (e) {
+      // Build a popup with loading state
+      var popup = L.popup()
+        .setLatLng(e.latlng)
+        .setContent("Loading weather data...")
+        .openOn(map);
+
+      fetchForecast(e.latlng.lat, e.latlng.lng).then((data) => {
+        const timeseries = data.properties.timeseries;
+        const current = timeseries[0].data.instant.details;
+        const wind = current.wind_speed;
+        const dir = current.wind_from_direction;
+        const temperature = current.air_temperature;
+
+        // No best dirs for arbitrary location
+        const bestDirs = [];
+        const table = buildForecastTable(timeseries, bestDirs);
+
+        const gmapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${e.latlng.lat},${e.latlng.lng}`;
+        const windyUrl = `https://www.windy.com/${e.latlng.lat}/${e.latlng.lng}/wind?${e.latlng.lat},${e.latlng.lng},13`;
+        const applemapsUrl = `https://maps.apple.com/?ll=${e.latlng.lat},${e.latlng.lng}`;
+        let mapsUrl = isAppleDevice() ? applemapsUrl : gmapsUrl;
+
+        const content = `
+                <div style="font-size:1.1em; font-weight:bold; margin-bottom:5px;">Spot info</div>
+                Current wind: ${wind.toFixed(1)} m/s (${Math.round(dir)}°)<br>
+                Current temperature: ${temperature.toFixed(1)} °C<br>
+                <br>
+                <div style="height:300px;overflow:auto;">${table}</div><br>
+                <hr>
+                <a class="nav-btn" href="${mapsUrl}" target="_blank"><img src="map-map-marker-svgrepo-com.svg" height="25" alt="Navigate"/></a>
+                <a class="nav-btn" href="${windyUrl}" target="_blank"><img src="cdnlogo.com_windy.svg" height="25" alt="Windy"/></a>
+             `;
+
+        popup.setContent(content);
+      }).catch(err => {
+        console.error(err);
+        popup.setContent("Error loading weather data.");
+      });
+    });
 
     // TEE GLOBAALIKSI surfseeker.js:lle (TÄRKEÄ: tämän pitää olla script-tagissa)
     // window.surfApp = { map, refreshSpots }; 

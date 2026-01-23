@@ -59,6 +59,65 @@ export function createWindIcon(direction, speed, bestDirs) {
   });
 }
 
+export function createWindSectorSVG(bestDirs, size = 60) {
+  if (!bestDirs || bestDirs.length < 2) return "";
+
+  const center = size / 2;
+  const radius = size / 2 - 2; // padding
+
+  // Helper to get coordinates for an angle
+  // In SVG, 0 deg is 3 o'clock. Wind 0 deg is 12 o'clock.
+  // Wind angle A -> SVG angle = A - 90
+  function getCoords(angleInDegrees) {
+    const rad = (angleInDegrees - 90) * (Math.PI / 180.0);
+    return {
+      x: center + radius * Math.cos(rad),
+      y: center + radius * Math.sin(rad)
+    };
+  }
+
+  function createSectorPath(startAngle, endAngle) {
+    // Handle wrap around if necessary, but assuming input handled or simple arcs
+    // Logic for large arc flag: if end - start > 180, flag is 1
+    let diff = endAngle - startAngle;
+    if (diff < 0) diff += 360;
+
+    const largeArcFlag = diff > 180 ? 1 : 0;
+    const start = getCoords(startAngle);
+    const end = getCoords(endAngle);
+
+    return `M ${center} ${center} L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${end.x} ${end.y} Z`;
+  }
+
+  const paths = [];
+
+  // First sector
+  const s1 = parseFloat(bestDirs[0]);
+  const e1 = parseFloat(bestDirs[1]);
+  paths.push(`<path d="${createSectorPath(s1, e1)}" fill="rgba(0, 255, 0, 0.4)" stroke="green" stroke-width="1" />`);
+
+  // Second sector if exists
+  if (bestDirs.length >= 4) {
+    const s2 = parseFloat(bestDirs[2]);
+    const e2 = parseFloat(bestDirs[3]);
+    paths.push(`<path d="${createSectorPath(s2, e2)}" fill="rgba(0, 255, 0, 0.4)" stroke="green" stroke-width="1" />`);
+  }
+
+  // Compass circle
+  const circle = `<circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="#ccc" stroke-width="1" />`;
+  // North tick
+  const north = `<line x1="${center}" y1="${center - radius}" x2="${center}" y2="${center - radius + 5}" stroke="red" stroke-width="2" />`;
+
+  return `
+        <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+            ${circle}
+            ${paths.join('')}
+            ${north}
+            <text x="${center}" y="${center}" text-anchor="middle" dominant-baseline="middle" font-size="10" fill="#666">N</text>
+        </svg>
+    `;
+}
+
 export function windsurfColor(speed) {
   // -----------------------------------------------------------------
   // 1️⃣ Clamp the input to the supported range (0‑15)
