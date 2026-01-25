@@ -187,8 +187,8 @@
       "type": "Feature",
       "properties": {
         "name": "Katajanlahden venesatama",
-        "best_wind_dir": [70, 140],
-        "notes": "-",
+        "best_wind_dir": [220, 290],
+        
         "information": "./places/karjanlahti-venesatama.md"
       },
       "geometry": {
@@ -202,7 +202,7 @@
       "properties": {
         "name": "Lypsinmaan uimaranta",
         "best_wind_dir": [170, 300],
-        "notes": "Suunnat varmistettava",
+        
         "information": "./places/lypsinmaa-uimaranta.md"
       },
       "geometry": {
@@ -215,7 +215,7 @@
       "properties": {
         "name": "Uimaranta Lakiksen risteyksen lähellä",
         "best_wind_dir": [240, 330],
-        "notes": "Suunnat varmistettava",
+        
         "information": "./places/lakis-uimaranta.md"
       },
       "geometry": {
@@ -228,7 +228,7 @@
       "properties": {
         "name": "Ylipään uimaranta",
         "best_wind_dir": [0, 35],
-        "notes": "-",
+        
         "information": "./places/ylipaan-uimaranta.md"
       },
       "geometry": {
