@@ -55,3 +55,15 @@ To add a spot: define geometry in geojson.io, append the feature to `spots.geojs
 The map uses Finland's national CRS **EPSG:3067** (TM35FIN) via Proj4Leaflet, with MML (Maanmittauslaitos) base tiles. Coordinates in `spots.geojson` are plain WGS84 lon/lat; Leaflet handles the projection. The basemap is dimmed with a `filter: brightness(...)` on `.leaflet-tile-pane` only, so markers/popups/controls stay full-brightness.
 
 External libraries (Leaflet, axios, marked, proj4, proj4leaflet) are loaded from CDNs in `index.html` — there is no local dependency on them.
+
+## PWA / installability
+
+The site is an installable Progressive Web App (Android home-screen / iOS Add to Home Screen):
+
+- `manifest.webmanifest` — app metadata + icons, `display: standalone`.
+- `sw.js` — service worker registered at the end of `index.html`. Caches the app shell **cache-first**, but **never caches `api.met.no`** so forecasts stay live. Bump `CACHE` (`"crater-v1"`) whenever cached assets change, or clients keep stale files.
+- `icons/icon-192.png` + `icon-512.png` — the icons the manifest and `index.html` actually use.
+- **All PWA paths must stay relative (`./`).** The deployed site is a GitHub Pages _project_ site under `/CraterWeather/`; absolute `/…` paths resolve to the user-site root and break the manifest/SW/icons.
+- Service workers only run over HTTPS (GitHub Pages) or `localhost` — not over `file://`.
+
+Gotcha — duplicate icon sets: the repo root also has favicon-generator output (`site.webmanifest`, `android-chrome-*.png`, `apple-touch-icon.png`, `favicon*.png`/`.ico`). These are **not** what the app loads — `index.html` points to `./manifest.webmanifest` and `./icons/`. Edit those, not the root `site.webmanifest`.
