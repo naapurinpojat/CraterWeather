@@ -11,11 +11,9 @@
         height: 97vh;
       }
 
-      .leaflet-layer,
-      .leaflet-control-zoom-in,
-      .leaflet-control-zoom-out,
-      .leaflet-control-attribution {
-        filter: invert(100%) hue-rotate(180deg) saturate(80%) contrast(90%) brightness(40%);
+      /* Kevyt tummennus pohjakartalle (ei vaikuta markereihin/kontrolleihin) */
+      .leaflet-tile-pane {
+        filter: brightness(0.7) saturate(0.9);
       }
 
       #infoModal {
@@ -57,32 +55,248 @@
       }
 
       .wind-marker {
-        width: 30px;
-        height: 30px;
+        width: 32px;
+        height: 32px;
         transform-origin: center center;
+      }
+
+      .wind-marker svg {
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+      }
+
+      .score-marker-wrap {
+        background: transparent;
+        border: none;
+      }
+
+      .score-marker {
+        width: 34px;
+        height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        border: 2px solid #fff;
+        color: #fff;
+        font-weight: 800;
+        font-size: 14px;
+        font-family: "Tahoma", sans-serif;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        text-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
       }
 
       .wind-table {
         border-collapse: collapse;
         width: 100%;
-        font-size: 12px;
+        font-size: 11px;
+        font-family: "Consolas", monospace;
       }
 
-      .wind-table th,
-      .wind-table td {
-        font-family: "Consolas", "sans-serif";
-        border: 0;
-        padding: 1px 1px;
-        font-size: 10px;
+      .wind-table thead th {
+        position: sticky;
+        top: 0;
+        background: #2b2b2b;
+        color: #fff;
+        font-weight: 600;
+        padding: 4px 3px;
         text-align: left;
+        font-size: 10px;
+        letter-spacing: 0.3px;
+        z-index: 1;
+      }
+
+      .wind-table td {
+        border: 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        padding: 2px 3px;
+        text-align: left;
+        white-space: nowrap;
+      }
+
+      .wind-table tr.day-sep td {
+        background: #e8d9b0;
+        color: #6e571a;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 9px;
+        letter-spacing: 0.5px;
+        padding: 3px 6px;
       }
 
       .wind-table tr.good {
-        background-color: #b2f2bb;
+        background-color: #d7f5dd;
       }
 
       .wind-table tr.verygood {
-        background-color: #28ff45;
+        background-color: #9bf0ac;
+      }
+
+      .wind-table tr.good td.t-time,
+      .wind-table tr.verygood td.t-time {
+        box-shadow: inset 3px 0 0 #16a34a;
+      }
+
+      .wind-table .dir-arrow {
+        width: 16px;
+        height: 16px;
+        display: block;
+        transform-origin: center center;
+      }
+
+      .wind-table td.t-dir.in-best {
+        color: #16a34a;
+        font-weight: 700;
+      }
+
+      .wind-bar-wrap {
+        position: relative;
+        background: rgba(0, 0, 0, 0.08);
+        border-radius: 3px;
+        width: 36px;
+        height: 14px;
+        overflow: hidden;
+      }
+
+      .score-pill {
+        display: inline-block;
+        min-width: 22px;
+        padding: 1px 4px;
+        border-radius: 8px;
+        color: #fff;
+        font-weight: 700;
+        font-size: 10px;
+        text-align: center;
+        text-shadow: 0 0 2px rgba(0, 0, 0, 0.35);
+      }
+
+      .wind-bar {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        border-radius: 3px;
+      }
+
+      .wind-val {
+        position: relative;
+        z-index: 1;
+        padding-left: 4px;
+        line-height: 14px;
+        font-weight: 600;
+        color: #111;
+        text-shadow:
+          0 0 2px rgba(255, 255, 255, 0.9),
+          0 0 2px rgba(255, 255, 255, 0.9);
+      }
+
+      .compass-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 6px 0 8px;
+      }
+
+      .wind-compass {
+        flex: 0 0 auto;
+      }
+
+      .compass-info {
+        font-size: 11px;
+        line-height: 1.5;
+      }
+
+      .compass-legend {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .compass-legend .legend-dot {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
+      }
+
+      .compass-legend .legend-dot.sector {
+        background: rgba(34, 197, 94, 0.35);
+        border: 1px solid #16a34a;
+      }
+
+      .compass-legend .legend-dot.needle {
+        border-radius: 50%;
+        background: #1f2937;
+      }
+
+      .compass-best {
+        margin-top: 4px;
+        font-weight: 700;
+        color: #16a34a;
+      }
+
+      .surf-score {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 4px;
+      }
+
+      .surf-score-num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 34px;
+        height: 34px;
+        padding: 0 6px;
+        border-radius: 50%;
+        color: #fff;
+        font-weight: 800;
+        font-size: 15px;
+        text-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
+      }
+
+      .surf-score-label {
+        font-size: 10px;
+        line-height: 1.2;
+        color: #444;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+
+      .surf-now {
+        font-size: 11px;
+        color: #444;
+        margin-bottom: 4px;
+      }
+
+      /* Info-sheetin väreihin sopiva vierityspalkki */
+      .ss-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: #b89b5e rgb(252, 236, 203);
+      }
+
+      .ss-scroll::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+
+      .ss-scroll::-webkit-scrollbar-track {
+        background: rgb(252, 236, 203);
+        border-radius: 6px;
+      }
+
+      .ss-scroll::-webkit-scrollbar-thumb {
+        background: #b89b5e;
+        border-radius: 6px;
+        border: 2px solid rgb(252, 236, 203);
+      }
+
+      .ss-scroll::-webkit-scrollbar-thumb:hover {
+        background: #6e571a;
+      }
+
+      .ss-scroll::-webkit-scrollbar-corner {
+        background: rgb(252, 236, 203);
       }
 
       .leaflet-popup-content-wrapper {
@@ -149,10 +363,10 @@
     </style>
   </head>
 
-  <body style="background-color: rgb(0, 0, 0)">
+  <body>
     <div id="map"></div>
     <!-- Modal for extra info -->
-    <div id="infoModal">
+    <div id="infoModal" class="ss-scroll">
       <span id="infoModalClose">✖</span>
       <div id="infoContent">Loading…</div>
     </div>
@@ -208,33 +422,15 @@
         return isIOS || isMacOS;
       }
 
-      // Create custom SVG arrow marker
-      function createWindIcon(direction, speed, best_dir) {
-        let color = "#6e571a";
-        if (speed >= 7 && direction >= best_dir[0] && direction <= best_dir[1])
-          color = "#00ff00";
-        else if (
-          (speed >= 3 &&
-            direction >= best_dir[0] &&
-            direction <= best_dir[1]) ||
-          (direction >= best_dir[2] && direction <= best_dir[3])
-        )
-          color = "#008000";
-
-        const svg = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="30" fill="none" height="30"
-             viewBox="0 0 24 24" style="transform: rotate(${
-               direction + 180
-             }deg)">
-          <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="${color}" stroke-width="2"/>
-          <path d="M12 8L12 16" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M15 11L12.087 8.08704C12.039 8.03897 11.961 8.03897 11.913 8.08704L9 11" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>`;
+      // Karttamerkki: paras tuleva surffattavuus (väri + numero)
+      function createScoreIcon(score) {
         return L.divIcon({
-          className: "wind-marker",
-          html: svg,
-          iconSize: [24, 24],
-          iconAnchor: [12, 12],
+          className: "score-marker-wrap",
+          html: `<div class="score-marker" style="background:${scoreColor(
+            score,
+          )}">${score}</div>`,
+          iconSize: [34, 34],
+          iconAnchor: [17, 17],
         });
       }
 
@@ -246,40 +442,251 @@
         return res.data;
       }
 
+      // Onko tuulen suunta spotin parhaalla sektorilla (tukee 1 tai 2 sektoria)
+      function dirInBest(dir, bestDirs) {
+        if (!bestDirs) return false;
+        const inA = dir >= bestDirs[0] && dir <= bestDirs[1];
+        const inB =
+          typeof bestDirs[2] !== "undefined" &&
+          dir >= bestDirs[2] &&
+          dir <= bestDirs[3];
+        return inA || inB;
+      }
+
+      // Lajin raja-arvot. surfseeker.js asettaa window.SURF_THRESHOLDS
+      // aktiivisen lajin mukaan; muutoin käytetään purjelautailun oletuksia.
+      const DEFAULT_THRESHOLDS = { good: [5, 6.9], very: 7 };
+      function activeThresholds() {
+        return window.SURF_THRESHOLDS || DEFAULT_THRESHOLDS;
+      }
+
+      // Kulmaetäisyys (astetta) suunnasta sektoriin [a,b]; 0 jos sisällä
+      function angDistToSector(dir, a, b) {
+        const n = (x) => ((x % 360) + 360) % 360;
+        dir = n(dir);
+        a = n(a);
+        b = n(b);
+        const inside = a <= b ? dir >= a && dir <= b : dir >= a || dir <= b;
+        if (inside) return 0;
+        const d = (x, y) => {
+          const t = Math.abs(x - y);
+          return Math.min(t, 360 - t);
+        };
+        return Math.min(d(dir, a), d(dir, b));
+      }
+
+      // Surffattavuus 0..100: suunta × nopeus × puuskakerroin
+      function surfabilityScore(wind, gust, dir, bestDirs, thr) {
+        thr = thr || activeThresholds();
+        const lo = thr.good[0];
+        const ideal = thr.very;
+
+        // 1) Suunta: 1.0 sektorissa, lineaarinen lasku 45° marginaalilla
+        let dScore = 0;
+        if (bestDirs) {
+          const margin = 45;
+          const ev = (a, b) =>
+            Math.max(0, 1 - angDistToSector(dir, a, b) / margin);
+          dScore = ev(bestDirs[0], bestDirs[1]);
+          if (typeof bestDirs[2] !== "undefined")
+            dScore = Math.max(dScore, ev(bestDirs[2], bestDirs[3]));
+        }
+
+        // 2) Nopeus: nousu hyvälle kaistalle, huippu lähellä "erittäin hyvä",
+        //    loiva lasku yltämärässä tuulessa
+        let sScore;
+        if (wind <= 0) sScore = 0;
+        else if (wind < lo) sScore = 0.55 * (wind / lo);
+        else if (wind < ideal)
+          sScore = 0.55 + 0.45 * ((wind - lo) / (ideal - lo));
+        else {
+          const over = wind - ideal;
+          sScore = Math.max(0.4, 1 - (over / (ideal * 1.5)) * 0.6);
+        }
+
+        // 3) Puuskakerroin: tasainen tuuli parempi (rako > 2 m/s rokottaa)
+        const gap = Math.max(0, gust - wind);
+        const gFactor = Math.max(0.6, 1 - Math.max(0, gap - 2) * 0.05);
+
+        return Math.round(dScore * sScore * gFactor * 100);
+      }
+
+      function scoreColor(s) {
+        if (s >= 80) return "#16a34a";
+        if (s >= 60) return "#84cc16";
+        if (s >= 40) return "#f59e0b";
+        return "#9ca3af";
+      }
+
       // Build forecast table
       function buildForecastTable(timeseries, bestDirs) {
+        const thr = activeThresholds();
+        let lastDay = "";
         const rows = timeseries
           .slice(0, 48)
           .map((entry) => {
-            const finnishTime = new Date(entry.time).toLocaleString("fi-FI", {
+            const d = new Date(entry.time);
+            const dayLabel = d.toLocaleDateString("fi-FI", {
               timeZone: "Europe/Helsinki",
+              weekday: "short",
+              day: "numeric",
+              month: "numeric",
             });
-            const wind = entry.data.instant.details.wind_speed;
-            const gust = entry.data.instant.details.wind_speed_of_gust;
-            const dir = entry.data.instant.details.wind_from_direction;
-            const temperature = entry.data.instant.details.air_temperature;
-            const bestwinddirs =
-              (dir >= bestDirs[0] && dir <= bestDirs[1]) ||
-              (dir >= bestDirs[2] && dir <= bestDirs[3]);
-            const isGood = wind >= 5 && wind < 7 && bestwinddirs;
-            const isVeryGood = wind >= 7 && bestwinddirs;
+            const timeCell = d.toLocaleTimeString("fi-FI", {
+              timeZone: "Europe/Helsinki",
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+            const det = entry.data.instant.details;
+            const wind = det.wind_speed;
+            const gust = det.wind_speed_of_gust;
+            const dir = det.wind_from_direction;
+            const temperature = det.air_temperature;
 
-            return `
-          <tr class="${isVeryGood ? "verygood" : isGood ? "good" : ""}">
-            <td>${finnishTime.slice(0, -3)}</td>
-            <td>${wind.toFixed(1)}</td>
-            <td>${gust.toFixed(1)}</td>
-            <td>${Math.round(dir)}°</td>
-            <td>${temperature.toFixed(1)}</td>
+            const inBest = dirInBest(dir, bestDirs);
+            const isGood = wind >= thr.good[0] && wind < thr.very && inBest;
+            const isVeryGood = wind >= thr.very && inBest;
+            const rowClass = isVeryGood ? "verygood" : isGood ? "good" : "";
+            const score = surfabilityScore(wind, gust, dir, bestDirs, thr);
+
+            // Nuolen väri suunnan/laadun mukaan
+            let arrowColor = "#9c8a52"; // ei sektorilla
+            if (inBest) arrowColor = "#3b82f6"; // suunta ok, tuuli heikko
+            if (isGood) arrowColor = "#65a30d";
+            if (isVeryGood) arrowColor = "#16a34a";
+
+            // Nuoli näyttää minne tuulee (from + 180)
+            const arrow = `<svg class="dir-arrow" viewBox="0 0 24 24" style="transform: rotate(${
+              dir + 180
+            }deg)">
+              <path d="M12 3 L12 19 M7 14 L12 19 L17 14" fill="none" stroke="${arrowColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>`;
+
+            // Voimakkuuspalkki (täysi leveys = max m/s)
+            const bar = (val, max, grad) => {
+              const pct = Math.min(100, (val / max) * 100);
+              return `<div class="wind-bar-wrap"><div class="wind-bar" style="width:${pct}%;background:${grad}"></div><span class="wind-val">${val.toFixed(
+                1,
+              )}</span></div>`;
+            };
+
+            // Tuuli: väri laadun mukaan (~15 m/s täysi)
+            let windGrad = "linear-gradient(90deg, #fcd34d, #f97316)";
+            if (isGood) windGrad = "linear-gradient(90deg, #84cc16, #65a30d)";
+            if (isVeryGood)
+              windGrad = "linear-gradient(90deg, #22c55e, #16a34a)";
+            const windBar = bar(wind, 15, windGrad);
+
+            // Puuska: oma viileä väri (vaalea, jotta luku näkyy), ~20 m/s täysi
+            const gustBar = bar(gust, 20, "linear-gradient(90deg, #bfdbfe, #60a5fa)");
+
+            const daySep =
+              dayLabel !== lastDay
+                ? `<tr class="day-sep"><td colspan="7">${dayLabel}</td></tr>`
+                : "";
+            lastDay = dayLabel;
+
+            return `${daySep}
+          <tr class="${rowClass}">
+            <td class="t-time">${timeCell}</td>
+            <td class="t-arrow">${arrow}</td>
+            <td class="t-dir ${inBest ? "in-best" : ""}">${Math.round(
+              dir,
+            )}°</td>
+            <td class="t-wind">${windBar}</td>
+            <td class="t-gust">${gustBar}</td>
+            <td class="t-temp">${temperature.toFixed(1)}°</td>
+            <td class="t-score"><span class="score-pill" style="background:${scoreColor(
+              score,
+            )}">${score}</span></td>
           </tr>`;
           })
           .join("");
 
         return `
         <table class="wind-table">
-          <tr><th>Time</th><th>Wind</th><th>Gust</th><th>Dir</th><th>Temp</th></tr>
-          ${rows}
+          <thead>
+            <tr><th>Klo</th><th></th><th>Suunta</th><th>Tuuli m/s</th><th>Puuska</th><th>°C</th><th>Arvio</th></tr>
+          </thead>
+          <tbody>${rows}</tbody>
         </table>`;
+      }
+
+      // Kompassi: piirtää optimaaliset tuulen suunnat (sektorit) + nykyisen tuulen
+      function buildWindCompass(bestDirs, currentDir) {
+        const size = 130;
+        const cx = size / 2;
+        const cy = size / 2;
+        const r = 50;
+
+        const pt = (deg, rad) => [
+          cx + rad * Math.sin((deg * Math.PI) / 180),
+          cy - rad * Math.cos((deg * Math.PI) / 180),
+        ];
+
+        const wedge = (a1, a2) => {
+          if (a2 < a1) a2 += 360;
+          const [x1, y1] = pt(a1, r);
+          const [x2, y2] = pt(a2, r);
+          const large = a2 - a1 > 180 ? 1 : 0;
+          return `M ${cx} ${cy} L ${x1.toFixed(1)} ${y1.toFixed(
+            1,
+          )} A ${r} ${r} 0 ${large} 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z`;
+        };
+
+        let sectors = "";
+        if (bestDirs) {
+          sectors += `<path d="${wedge(
+            bestDirs[0],
+            bestDirs[1],
+          )}" fill="#22c55e" fill-opacity="0.35" stroke="#16a34a" stroke-width="1"/>`;
+          if (typeof bestDirs[2] !== "undefined") {
+            sectors += `<path d="${wedge(
+              bestDirs[2],
+              bestDirs[3],
+            )}" fill="#22c55e" fill-opacity="0.35" stroke="#16a34a" stroke-width="1"/>`;
+          }
+        }
+
+        // Nykyinen tuuli (mistä tuulee) -neula
+        let needle = "";
+        if (typeof currentDir === "number" && !isNaN(currentDir)) {
+          const [nx, ny] = pt(currentDir, r - 5);
+          const ok = dirInBest(currentDir, bestDirs);
+          const col = ok ? "#16a34a" : "#1f2937";
+          needle = `<line x1="${cx}" y1="${cy}" x2="${nx.toFixed(
+            1,
+          )}" y2="${ny.toFixed(
+            1,
+          )}" stroke="${col}" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(
+              1,
+            )}" r="3.2" fill="${col}"/>`;
+        }
+
+        const labels = [
+          ["N", 0],
+          ["E", 90],
+          ["S", 180],
+          ["W", 270],
+        ]
+          .map(([t, deg]) => {
+            const [lx, ly] = pt(deg, r + 10);
+            return `<text x="${lx.toFixed(1)}" y="${ly.toFixed(
+              1,
+            )}" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="700" fill="#555">${t}</text>`;
+          })
+          .join("");
+
+        return `
+        <svg class="wind-compass" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" role="img" aria-label="Optimaaliset tuulen suunnat">
+          <circle cx="${cx}" cy="${cy}" r="${r}" fill="#fff" stroke="#bbb" stroke-width="1"/>
+          ${sectors}
+          <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#bbb" stroke-width="1"/>
+          ${labels}
+          ${needle}
+          <circle cx="${cx}" cy="${cy}" r="2.5" fill="#333"/>
+        </svg>`;
       }
 
       let geoLayer;
@@ -320,8 +727,45 @@
               const timeseries = data.properties.timeseries;
               const current = timeseries[0].data.instant.details;
               const wind = current.wind_speed;
+              const gust = current.wind_speed_of_gust;
               const dir = current.wind_from_direction;
               const temperature = current.air_temperature;
+              const score = surfabilityScore(
+                wind,
+                gust,
+                dir,
+                feature.properties.best_wind_dir,
+              );
+
+              // Paras surffattavuus koko ennustejaksolla -> karttamerkkiin
+              let bestScore = 0;
+              let bestTime = null;
+              timeseries.forEach((e) => {
+                const det = e.data.instant.details;
+                if (!det) return;
+                const g =
+                  typeof det.wind_speed_of_gust === "number"
+                    ? det.wind_speed_of_gust
+                    : det.wind_speed;
+                const s = surfabilityScore(
+                  det.wind_speed,
+                  g,
+                  det.wind_from_direction,
+                  feature.properties.best_wind_dir,
+                );
+                if (s > bestScore) {
+                  bestScore = s;
+                  bestTime = e.time;
+                }
+              });
+              const bestWhen = bestTime
+                ? new Date(bestTime).toLocaleString("fi-FI", {
+                    timeZone: "Europe/Helsinki",
+                    weekday: "short",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : "";
 
               const gmapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${latlng.lat},${latlng.lng}`;
               const windyUrl = `https://www.windy.com/${latlng.lat}/${latlng.lng}/wind?${latlng.lat},${latlng.lng},13`;
@@ -333,12 +777,14 @@
                 mapsUrl = gmapsUrl;
               }
 
-              marker.setIcon(
-                createWindIcon(dir, wind, feature.properties.best_wind_dir),
-              );
+              marker.setIcon(createScoreIcon(bestScore));
               const table = buildForecastTable(
                 timeseries,
                 feature.properties.best_wind_dir,
+              );
+              const compass = buildWindCompass(
+                feature.properties.best_wind_dir,
+                dir,
               );
 
               marker.bindPopup(`
@@ -351,24 +797,49 @@
         </div>
         <div id="tabInfo" class="tab-content active">
               <b>${feature.properties.name}</b><br><hr>
-              Best wind: ${feature.properties.best_wind_dir[0]}°–${
-                feature.properties.best_wind_dir[1]
-              }°
-              ${
-                typeof feature.properties.best_wind_dir[2] !== "undefined"
-                  ? `and : ${feature.properties.best_wind_dir[2]}°–${feature.properties.best_wind_dir[3]}<br>`
-                  : "<br>"
-              }
+              <div class="compass-wrap">
+                ${compass}
+                <div class="compass-info">
+                  <div class="surf-score">
+                    <span class="surf-score-num" style="background:${scoreColor(
+                      bestScore,
+                    )}">${bestScore}</span>
+                    <span class="surf-score-label">paras arvio<br>${bestWhen}</span>
+                  </div>
+                  <div class="surf-now">
+                    Nyt: <b style="color:${scoreColor(
+                      score,
+                    )}">${score}</b> / 100
+                  </div>
+                  <div class="compass-legend">
+                    <span class="legend-dot sector"></span> Optimaalinen suunta
+                  </div>
+                  <div class="compass-legend">
+                    <span class="legend-dot needle"></span> Nyt: ${Math.round(
+                      dir,
+                    )}°
+                  </div>
+                  <div class="compass-best">
+                    Paras tuuli: ${feature.properties.best_wind_dir[0]}°–${
+                      feature.properties.best_wind_dir[1]
+                    }°${
+                      typeof feature.properties.best_wind_dir[2] !== "undefined"
+                        ? ` & ${feature.properties.best_wind_dir[2]}°–${feature.properties.best_wind_dir[3]}°`
+                        : ""
+                    }
+                  </div>
+                </div>
+              </div>
               Current wind: ${wind.toFixed(1)} m/s (${Math.round(dir)}°)<br>
               Current temperature: ${temperature.toFixed(1)} °C<br>
               Notes: ${feature.properties.notes}<br>
 
-              <div style="height:300px;overflow:auto;">${table}</div><br><hr>
+              <div class="ss-scroll" style="height:300px;overflow:auto;">${table}</div><br><hr>
               <a class="nav-btn" href="${mapsUrl}" target="_blank"><img src="map-map-marker-svgrepo-com.svg" height="25" alt="Navigate"/></a>
               <a class="nav-btn" href="${windyUrl}" target="_blank"><img src="cdnlogo.com_windy.svg" height="25" alt="Windy"/></a>
                   </div>
               <div id="tabMore" class="tab-content">
-          <div id="markdownContent" style="height:450px;overflow:auto;">Loading markdown…</div>
+          <div id="markdownContent" class="ss-scroll" style="height:450px;overflow:auto;">Loading markdown…</div>
         </div>
       </div>
               `);

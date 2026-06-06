@@ -112,12 +112,6 @@ ready(() => {
 
     <div class="ss-body" id="ssBody">
       <div class="ss-section">
-        <div><b>Nuolen tyyppi</b></div>
-        <label><input type="radio" name="ssDirMode" value="to"> Minne tuulee</label>
-        <label style="margin-left:8px;"><input type="radio" name="ssDirMode" value="from"> Mistä tuulee</label>
-      </div>
-
-      <div class="ss-section">
         <div><b>Laji</b></div>
         <div id="ssSportGroup">
           <span class="chip" data-sport="windsurf">Surf</span>
@@ -138,7 +132,6 @@ ready(() => {
 
   // 2) tila localStoragesta
   const state = {
-    dirMode: lsGet(LS.dirMode, "to"),
     sport: lsGet(LS.sport, "windsurf"),
     open: lsGet(LS.panelOpen, "1") === "1",
   };
@@ -167,17 +160,7 @@ ready(() => {
     if (panel.classList.contains("collapsed")) setCollapsed(false);
   });
 
-  // 4) dirMode
-  panel.querySelectorAll("input[name=ssDirMode]").forEach((r) => {
-    r.checked = r.value === state.dirMode;
-    r.addEventListener("change", (e) => {
-      state.dirMode = e.target.value;
-      lsSet(LS.dirMode, state.dirMode);
-      refreshSpots();
-    });
-  });
-
-  // 5) sport
+  // 4) sport
   const ssLegend = panel.querySelector("#ssLegend");
   function applySportUI() {
     panel.querySelectorAll("#ssSportGroup .chip").forEach((chip) => {
@@ -185,6 +168,8 @@ ready(() => {
     });
     const thr = SPORT_THRESHOLDS[state.sport];
     ssLegend.textContent = thr ? thr.label : "";
+    // Jaa aktiivisen lajin raja-arvot index.html:n surffattavuuspisteille
+    window.SURF_THRESHOLDS = thr || null;
   }
   applySportUI();
   panel.querySelector("#ssSportGroup").addEventListener("click", (e) => {
@@ -196,7 +181,7 @@ ready(() => {
     refreshSpots();
   });
 
-  // 6) pikavalinnat
+  // 5) pikavalinnat
   const quickRow = panel.querySelector("#ssQuickRow");
   QUICK_VIEWS.forEach((q) => {
     const b = document.createElement("button");
@@ -205,46 +190,6 @@ ready(() => {
     b.onclick = () => map.setView(q.c, q.z);
     quickRow.appendChild(b);
   });
-  panel.querySelector("#ssRefresh").onclick = () => refreshSpots();
-
-  // 7) patchaa createWindIcon - käytä ympyrä+varsi+nuoli -symbolia
-  window.createWindIcon = function (directionFrom, speed, best_dir) {
-    const thr = SPORT_THRESHOLDS[state.sport];
-    const inBest = angleInRange(directionFrom, best_dir[0], best_dir[1]);
-
-    // väri aina FROM-suunnan mukaan + lajin raja-arvot
-    let color = "#6e571a";
-    if (speed >= thr.very && inBest) {
-      color = "#28ff45"; // erittäin hyvä
-    } else if (speed >= thr.good[0] && speed <= thr.good[1] && inBest) {
-      color = "#b2f2bb"; // hyvä
-    }
-
-    // piirtonurkka UI-valinnan mukaan (to/from)
-    const drawAngle =
-      state.dirMode === "to" ? toTO(directionFrom) : directionFrom;
-
-    return L.divIcon({
-      className: "wind-marker",
-      html: `
-      <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30"
-           viewBox="0 0 24 24" style="transform: rotate(${drawAngle}deg)">
-        <!-- Kehä -->
-        <path d="M21 12c0 4.9706-4.0294 9-9 9s-9-4.0294-9-9 4.0294-9 9-9 9 4.0294 9 9Z"
-              fill="none" stroke="${color}" stroke-width="2"/>
-        <!-- Varsi -->
-        <path d="M12 8L12 16" stroke="${color}" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round"/>
-        <!-- Kärki -->
-        <path d="M15 11L12.087 8.087c-.048-.048-.126-.048-.174 0L9 11"
-              stroke="${color}" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>`,
-      iconSize: [24, 24],
-      iconAnchor: [12, 12],
-    });
-  };
-
-  // 8) eka päivitys
+  // 6) eka päivitys (varmistaa että lajin raja-arvot näkyvät pisteissä)
   refreshSpots();
 });
