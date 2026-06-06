@@ -331,18 +331,45 @@
 
       .tab-buttons {
         display: flex;
-        margin-bottom: 5px;
+        gap: 4px;
+        margin-bottom: 8px;
+        padding: 3px;
+        background: rgba(110, 87, 26, 0.1);
+        border-radius: 12px;
       }
 
       .tab-buttons button {
         flex: 1;
-        border: 1px solid #444;
-        border-radius: 14px;
-        padding: 3px 8px;
-        background: #2b2b2b;
-        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        border: 0;
+        border-radius: 9px;
+        padding: 6px 8px;
+        background: transparent;
+        color: #6e571a;
         font-size: 12px;
+        font-weight: 600;
         cursor: pointer;
+        transition:
+          background 0.15s ease,
+          color 0.15s ease;
+      }
+
+      .tab-buttons button:hover {
+        background: rgba(110, 87, 26, 0.15);
+      }
+
+      .tab-buttons button.active {
+        background: #6e571a;
+        color: #fff;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+      }
+
+      .tab-btn-emoji {
+        font-size: 14px;
+        line-height: 1;
       }
 
       .tab-content {
@@ -801,10 +828,12 @@
               marker.bindPopup(`
                                   <div class="popup-tabs">
         <div class="tab-buttons">
-          <button id="tabInfoBtn">🌪️</button>
-          <button id="tabMoreBtn" data-file="${
-            feature.properties.information
-          }">✍🏽</button>
+          <button id="tabInfoBtn" class="active">
+            <span class="tab-btn-emoji">🌬️</span> Sää &amp; arvio
+          </button>
+          <button id="tabMoreBtn" data-file="${feature.properties.information}">
+            <span class="tab-btn-emoji">📝</span> Paikan kuvaus
+          </button>
         </div>
         <div id="tabInfo" class="tab-content active">
               <b>${feature.properties.name}</b><br><hr>
@@ -863,11 +892,11 @@
                 const mdContainer = document.getElementById("markdownContent");
 
                 function activate(tab) {
-                  tabInfo.classList.remove("active");
-                  tabMore.classList.remove("active");
-                  if (tab === "info") tabInfo.classList.add("active");
+                  tabInfo.classList.toggle("active", tab === "info");
+                  tabMore.classList.toggle("active", tab === "more");
+                  tabInfoBtn.classList.toggle("active", tab === "info");
+                  tabMoreBtn.classList.toggle("active", tab === "more");
                   if (tab === "more") {
-                    tabMore.classList.add("active");
                     // lazy-load markdown when opening tab
                     if (!mdContainer.dataset.loaded) {
                       const file = tabMoreBtn.dataset.file;
