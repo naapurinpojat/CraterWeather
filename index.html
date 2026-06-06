@@ -4,10 +4,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CraterWeather a Naapurinpojat solution Powered by Crater Surfers</title>
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-<link rel="manifest" href="/site.webmanifest">
+
+    <!-- PWA: asennettavuus + kotinäytön kuvake (suhteelliset polut /CraterWeather/ alipolkua varten) -->
+    <meta name="theme-color" content="#6e571a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Crater" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="surfseeker.css" />
     <style>
@@ -901,5 +908,16 @@
 
     <!-- Surfseeker UI (ei module, koska tiedosto käyttää window.surfAppia) -->
     <script src="surfseeker.js" defer></script>
+
+    <!-- PWA: rekisteröi service worker (asennettavuus + offline-kuori) -->
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("./sw.js").catch((err) => {
+            console.error("Service worker -rekisteröinti epäonnistui:", err);
+          });
+        });
+      }
+    </script>
   </body>
 </html>
