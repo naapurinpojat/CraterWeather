@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "crater-weather": {
+      "command": "bun",
+      "args": ["run", "mcp/server.ts"]
+    }
+  }
+}

@@ -67,3 +67,7 @@ The site is an installable Progressive Web App (Android home-screen / iOS Add to
 - Service workers only run over HTTPS (GitHub Pages) or `localhost` — not over `file://`.
 
 Gotcha — duplicate icon sets: the repo root also has favicon-generator output (`site.webmanifest`, `android-chrome-*.png`, `apple-touch-icon.png`, `favicon*.png`/`.ico`). These are **not** what the app loads — `index.html` points to `./manifest.webmanifest` and `./icons/`. Edit those, not the root `site.webmanifest`.
+
+## MCP server (`mcp/`)
+
+A local stdio MCP server exposing the surfability logic as tools (`list_spots`, `spot_conditions`, `rank_spots`, `spot_forecast`). `mcp/logic.ts` is **ported from the browser scoring** in `index.html`/`surfseeker.js` — if you change `surfabilityScore`/`SPORT_THRESHOLDS` in one place, update the other to keep them in sync. It loads spots from the published `spots.geojson` (`CRATER_SPOTS_URL`) and calls met.no with a required `User-Agent` (`MET_USER_AGENT`; met.no 403s without one). Run with `bun run mcp`; `.mcp.json` auto-registers it for Claude Code. Adds runtime deps `@modelcontextprotocol/sdk` + `zod` (the only non-dev dependencies in the project). See `mcp/README.md`.

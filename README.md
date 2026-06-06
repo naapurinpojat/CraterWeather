@@ -53,6 +53,12 @@ The app shell works offline; weather forecasts always require a connection.
 - Add the feature to `spots.geojson`. For spots, set `best_wind_dir` (one sector `[start, end]` or two `[s1, e1, s2, e2]`, degrees the wind comes _from_), optional `notes`, and `information` pointing to a markdown file.
 - Add the matching `places/<slug>.md` with a free-form description shown in the spot's popup.
 
+## Architecture
+
+CraterWeather is a zero-backend static web app: all logic runs in the browser, and weather comes directly from the met.no (Yr.no) API, called client-side. An optional local MCP server reuses the same scoring logic.
+
+<img src="architechture.png" width="600" >
+
 ## Development server using BUN
 
 To install dependencies:
