@@ -671,8 +671,9 @@
       function buildForecastTable(timeseries, bestDirs) {
         const thr = activeThresholds();
         let lastDay = "";
+        // Show every timestep met.no returns (~10 days: hourly for the first
+        // days, then 6-hourly), not just the first 48 hours.
         const rows = timeseries
-          .slice(0, 48)
           .map((entry) => {
             const d = new Date(entry.time);
             const dayLabel = d.toLocaleDateString("fi-FI", {
@@ -696,7 +697,14 @@
             const isGood = wind >= thr.good[0] && wind < thr.very && inBest;
             const isVeryGood = wind >= thr.very && inBest;
             const rowClass = isVeryGood ? "verygood" : isGood ? "good" : "";
-            const score = surfabilityScore(wind, gust, dir, bestDirs, thr);
+            const hasGust = Number.isFinite(gust);
+            const score = surfabilityScore(
+              wind,
+              hasGust ? gust : wind,
+              dir,
+              bestDirs,
+              thr,
+            );
 
             // Nuolen väri suunnan/laadun mukaan
             let arrowColor = "#9c8a52"; // ei sektorilla
@@ -727,7 +735,9 @@
             const windBar = bar(wind, 15, windGrad);
 
             // Puuska: oma viileä väri (vaalea, jotta luku näkyy), ~20 m/s täysi
-            const gustBar = bar(gust, 20, "linear-gradient(90deg, #bfdbfe, #60a5fa)");
+            const gustBar = hasGust
+              ? bar(gust, 20, "linear-gradient(90deg, #bfdbfe, #60a5fa)")
+              : '<span class="wind-val">–</span>';
 
             const daySep =
               dayLabel !== lastDay
