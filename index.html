@@ -612,6 +612,48 @@
         line-height: 1;
         color: #222;
       }
+      .matrix-days {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        padding: 8px 14px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+        flex: 0 0 auto;
+      }
+      .matrix-day-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid #6e571a;
+        background: transparent;
+        color: #6e571a;
+        border-radius: 14px;
+        padding: 3px 10px;
+        font-family: "Tahoma", sans-serif;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .matrix-day-btn.active {
+        background: #6e571a;
+        color: #fff;
+      }
+      .matrix-day-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 18px;
+        height: 16px;
+        padding: 0 4px;
+        border-radius: 8px;
+        background: #16a34a;
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .matrix-day-count.zero {
+        background: #9ca3af;
+      }
       .matrix-scroll {
         overflow: auto;
         -webkit-overflow-scrolling: touch;
@@ -622,10 +664,12 @@
         font-family: "Tahoma", sans-serif;
         color: #555;
       }
+      /* Sama värimaailma kuin ennustekortin .wind-table:ssa:
+         tumma otsikkopalkki, kerma/ruskea vuorokausijako, monospace. */
       table.matrix {
         border-collapse: separate;
         border-spacing: 0;
-        font-family: "Tahoma", sans-serif;
+        font-family: "Consolas", monospace;
         font-size: 11px;
       }
       table.matrix th,
@@ -633,30 +677,32 @@
         padding: 3px 5px;
         text-align: center;
         white-space: nowrap;
-        border-bottom: 1px solid #f0f0f0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
       }
       table.matrix thead th {
         position: sticky;
         top: 0;
-        background: #f3f4f6;
+        background: #2b2b2b;
+        color: #fff;
+        font-weight: 600;
+        letter-spacing: 0.3px;
         z-index: 2;
       }
       table.matrix .mx-day {
         font-weight: 700;
         height: 12px;
-        color: #374151;
+        color: #fff;
       }
       table.matrix .mx-hour {
-        color: #6b7280;
+        color: #cbd5e1;
       }
       table.matrix .day-start {
-        border-left: 2px solid #cbd5e1;
+        border-left: 2px solid #6e571a;
       }
       table.matrix th.spot-h,
       table.matrix td.spot-c {
         position: sticky;
         left: 0;
-        background: #fff;
         text-align: left;
         z-index: 1;
         max-width: 170px;
@@ -664,13 +710,20 @@
         text-overflow: ellipsis;
         font-weight: 600;
       }
+      table.matrix td.spot-c {
+        /* sama kermasävy kuin vuorokausijaossa, jotta kortti pysyy yhtenäisenä */
+        background: #e8d9b0;
+        color: #6e571a;
+      }
       table.matrix thead th.spot-h {
         z-index: 3;
-        background: #f3f4f6;
+        background: #2b2b2b;
+        color: #fff;
       }
       table.matrix td.cell {
         color: #fff;
         font-weight: 700;
+        text-shadow: 0 0 2px rgba(0, 0, 0, 0.35);
       }
 
       /* Mobiilissa matriisi koko ruudun kokoiseksi, vaaka-/pystyvieritys */
@@ -737,7 +790,8 @@
           </h2>
           <button id="matrixClose" type="button" aria-label="Sulje">✖</button>
         </div>
-        <div class="matrix-scroll" id="matrixScroll"></div>
+        <div class="matrix-days" id="matrixDays"></div>
+        <div class="matrix-scroll ss-scroll" id="matrixScroll"></div>
       </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.js"></script>
@@ -1156,7 +1210,10 @@
                 if (s >= SURFABLE_SCORE) surfableHours++;
                 scoreSeries.push({ time: e.time, score: s });
               });
-              spotMatrix.set(feature.properties.name, scoreSeries);
+              spotMatrix.set(feature.properties.name, {
+                series: scoreSeries,
+                bestDir: feature.properties.best_wind_dir,
+              });
               const bestWhen = bestTime
                 ? new Date(bestTime).toLocaleString("fi-FI", {
                     timeZone: "Europe/Helsinki",
@@ -1319,29 +1376,28 @@
         });
 
       // --- Pistematriisi: rakenna taulukko kerätyistä tuntipisteistä ---
-      // Rivit = paikat (paras pistemäärä ylimpänä), sarakkeet = ajat,
+      // Rivit = paikat (tuulensuunnan mukaan), sarakkeet = ajat,
       // solu = surfabilityScore. Näytetään ~72 h eteenpäin.
       const MATRIX_HORIZON_H = 72;
-      function buildMatrixHtml() {
+      let matrixSelectedDay = null; // null = kaikki päivät
+
+      // Kokoa matriisin data (rivit + sarakemeta) kerätyistä pisteistä.
+      function computeMatrix() {
         const spots = [...spotMatrix.entries()];
-        if (!spots.length) {
-          return `<div class="matrix-empty">Ei vielä dataa — odota hetki, että ennusteet latautuvat, ja avaa uudelleen.</div>`;
-        }
+        if (!spots.length) return null;
 
         // Sarakkeiden ajat: kaikkien paikkojen aikojen unioni horisontin sisällä
         const now = Date.now();
         const horizon = now + MATRIX_HORIZON_H * 3600 * 1000;
         const timeSet = new Set();
-        spots.forEach(([, series]) =>
-          series.forEach((p) => {
+        spots.forEach(([, data]) =>
+          data.series.forEach((p) => {
             const t = new Date(p.time).getTime();
             if (t >= now - 3600 * 1000 && t <= horizon) timeSet.add(p.time);
           }),
         );
         const times = [...timeSet].sort();
-        if (!times.length) {
-          return `<div class="matrix-empty">Ei ennustepisteitä valitulla aikavälillä.</div>`;
-        }
+        if (!times.length) return null;
 
         // Sarakkeiden metatiedot + vuorokauden vaihtumiskohdat
         let prevDay = "";
@@ -1362,14 +1418,65 @@
           return { t, day, hour, isNew };
         });
 
-        // Rivit: pisteet aikaindeksiä vasten, järjestys parhaan mukaan
+        // Rivit: pisteet aikaindeksiä vasten. Järjestetään paikat parhaan
+        // tuulensuunnan mukaan, jotta samanlaiset spotit (jotka syttyvät
+        // samoilla tunneilla) ryhmittyvät vierekkäin -> selvempi heatmap.
+        // Sektorin kiertokeskipiste edustaa paikan optimisuuntaa.
+        const sectorMid = (dirs) => {
+          if (!dirs || dirs.length < 2) return 999; // tuntematon -> loppuun
+          let a = dirs[0];
+          let b = dirs[1];
+          if (b < a) b += 360;
+          return ((a + b) / 2) % 360;
+        };
         const rows = spots
-          .map(([name, series]) => {
-            const m = new Map(series.map((p) => [p.time, p.score]));
-            const max = series.reduce((mx, p) => Math.max(mx, p.score), 0);
-            return { name, m, max };
+          .map(([name, data]) => {
+            const m = new Map(data.series.map((p) => [p.time, p.score]));
+            const max = data.series.reduce((mx, p) => Math.max(mx, p.score), 0);
+            return { name, m, max, dir: sectorMid(data.bestDir) };
           })
-          .sort((a, b) => b.max - a.max);
+          .sort((a, b) => a.dir - b.dir || b.max - a.max);
+
+        return { meta, rows };
+      }
+
+      // Päivävalitsin: nappi per päivä + montako >=70 pistettä (kaikki paikat).
+      function buildDaySelector(matrix) {
+        const days = [];
+        const counts = {};
+        matrix.meta.forEach((c) => {
+          if (!(c.day in counts)) {
+            counts[c.day] = 0;
+            days.push(c.day);
+          }
+        });
+        matrix.rows.forEach((r) => {
+          matrix.meta.forEach((c) => {
+            const s = r.m.get(c.t);
+            if (typeof s === "number" && s >= SURFABLE_SCORE) counts[c.day]++;
+          });
+        });
+        const totalAll = days.reduce((sum, d) => sum + counts[d], 0);
+
+        const btn = (key, label, count, active) =>
+          `<button type="button" class="matrix-day-btn${
+            active ? " active" : ""
+          }" data-day="${key}">${label}<span class="matrix-day-count${
+            count > 0 ? "" : " zero"
+          }">${count}</span></button>`;
+
+        let html = btn("", "Kaikki", totalAll, matrixSelectedDay === null);
+        days.forEach((d) => {
+          html += btn(d, d, counts[d], matrixSelectedDay === d);
+        });
+        return html;
+      }
+
+      // Taulukko, suodatettuna valittuun päivään (tai kaikki päivät).
+      function buildMatrixTable(matrix) {
+        const meta = matrixSelectedDay
+          ? matrix.meta.filter((c) => c.day === matrixSelectedDay)
+          : matrix.meta;
 
         const headCells = meta
           .map(
@@ -1380,7 +1487,7 @@
           )
           .join("");
 
-        const body = rows
+        const body = matrix.rows
           .map((r) => {
             const cells = meta
               .map((c) => {
@@ -1399,18 +1506,46 @@
         return `<table class="matrix"><thead><tr><th class="spot-h">Paikka</th>${headCells}</tr></thead><tbody>${body}</tbody></table>`;
       }
 
+      function renderMatrix() {
+        const daysEl = document.getElementById("matrixDays");
+        const scroll = document.getElementById("matrixScroll");
+        const matrix = computeMatrix();
+        if (!matrix) {
+          daysEl.innerHTML = "";
+          scroll.innerHTML = `<div class="matrix-empty">Ei vielä dataa — odota hetki, että ennusteet latautuvat, ja avaa uudelleen.</div>`;
+          return;
+        }
+        // Jos aiemmin valittu päivä ei enää löydy datasta, palaa "Kaikki"
+        if (
+          matrixSelectedDay &&
+          !matrix.meta.some((c) => c.day === matrixSelectedDay)
+        ) {
+          matrixSelectedDay = null;
+        }
+        daysEl.innerHTML = buildDaySelector(matrix);
+        scroll.innerHTML = buildMatrixTable(matrix);
+      }
+
       (function wireMatrix() {
         const modal = document.getElementById("matrixModal");
-        const scroll = document.getElementById("matrixScroll");
+        const daysEl = document.getElementById("matrixDays");
         const openBtn = document.getElementById("matrixBtn");
         const closeBtn = document.getElementById("matrixClose");
         if (!modal || !openBtn) return;
 
         const open = () => {
-          scroll.innerHTML = buildMatrixHtml();
+          renderMatrix();
           modal.classList.add("open");
         };
         const close = () => modal.classList.remove("open");
+
+        // Päivän valinta -> suodata taulukko
+        daysEl.addEventListener("click", (e) => {
+          const b = e.target.closest(".matrix-day-btn");
+          if (!b) return;
+          matrixSelectedDay = b.dataset.day || null;
+          renderMatrix();
+        });
 
         openBtn.addEventListener("click", open);
         closeBtn.addEventListener("click", close);
