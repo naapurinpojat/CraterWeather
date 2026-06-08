@@ -18,8 +18,14 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="surfseeker.css" />
     <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
       #map {
-        height: 97vh;
+        height: 100vh;
       }
 
       /* Kevyt tummennus pohjakartalle (ei vaikuta markereihin/kontrolleihin) */
@@ -51,9 +57,8 @@
 
       .overlay-text-bottom {
         position: absolute;
-        bottom: 0%;
-        left: 80px;
-        transform: translate(-50%, -50%);
+        bottom: 10px;
+        left: 10px;
         font-weight: bold;
         color: rgb(84, 101, 255);
         background-color: rgb(252, 236, 203);
@@ -372,6 +377,19 @@
         line-height: 1;
       }
 
+      /* Navigation buttons (Maps / Windy) — always visible under the card */
+      .popup-footer {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-top: 8px;
+      }
+
+      /* Full-screen close button (mobile only; desktop uses the ✕) */
+      .popup-close-fs {
+        display: none;
+      }
+
       .tab-content {
         display: none;
       }
@@ -394,8 +412,101 @@
           font-size: 10px;
         }
 
+        /* Location card fills the screen on mobile */
+        .leaflet-popup {
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          bottom: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          margin: 0 !important;
+          transform: none !important;
+          z-index: 10000 !important;
+          /* Restore Leaflet's base font (lost once moved out of .leaflet-container) */
+          font:
+            12px/1.5 "Helvetica Neue",
+            Arial,
+            Helvetica,
+            sans-serif;
+        }
+
+        .leaflet-popup-content-wrapper {
+          width: 100vw;
+          height: 100vh;
+          max-height: 100vh;
+          border-radius: 0;
+          box-shadow: none;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+
         .leaflet-popup-content {
-          max-width: 250px !important;
+          width: auto !important;
+          max-width: none !important;
+          margin: 16px;
+          flex: 1;
+          min-height: 0;
+          display: flex;
+          flex-direction: column;
+        }
+
+        /* Card lays out as a column: tabs on top, scrolling content,
+           close button pinned to the bottom of the screen */
+        .popup-tabs {
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+          min-height: 0;
+        }
+
+        .tab-buttons {
+          flex: 0 0 auto;
+        }
+
+        .tab-content.active {
+          flex: 1 1 auto;
+          min-height: 0;
+          overflow-y: auto;
+        }
+
+        /* Let the table/markdown grow with the screen instead of a fixed height */
+        .tab-content .ss-scroll {
+          height: auto !important;
+        }
+
+        .popup-footer,
+        .popup-close-fs {
+          flex: 0 0 auto;
+        }
+
+        /* Hide the marker pointer tip in full-screen mode */
+        .leaflet-popup-tip-container {
+          display: none !important;
+        }
+
+        /* Larger, easier-to-tap close button */
+        .leaflet-popup-close-button {
+          font-size: 28px !important;
+          padding: 8px 12px !important;
+        }
+
+        /* Big close button at the bottom of the card, styled like the tabs */
+        .popup-close-fs {
+          display: block;
+          width: 100%;
+          margin-top: 14px;
+          padding: 14px;
+          border: 0;
+          border-radius: 12px;
+          background: #6e571a;
+          color: #fff;
+          font-size: 16px;
+          font-weight: 700;
+          cursor: pointer;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
         }
       }
     </style>
@@ -874,17 +985,33 @@
               Current temperature: ${temperature.toFixed(1)} °C<br>
               Notes: ${feature.properties.notes}<br>
 
-              <div class="ss-scroll" style="height:300px;overflow:auto;">${table}</div><br><hr>
-              <a class="nav-btn" href="${mapsUrl}" target="_blank"><img src="map-map-marker-svgrepo-com.svg" height="25" alt="Navigate"/></a>
-              <a class="nav-btn" href="${windyUrl}" target="_blank"><img src="cdnlogo.com_windy.svg" height="25" alt="Windy"/></a>
+              <div class="ss-scroll" style="height:300px;overflow:auto;">${table}</div>
                   </div>
               <div id="tabMore" class="tab-content">
           <div id="markdownContent" class="ss-scroll" style="height:450px;overflow:auto;">Loading markdown…</div>
         </div>
+        <div class="popup-footer">
+          <a class="nav-btn" href="${mapsUrl}" target="_blank"><img src="map-map-marker-svgrepo-com.svg" height="25" alt="Navigate"/></a>
+          <a class="nav-btn" href="${windyUrl}" target="_blank"><img src="cdnlogo.com_windy.svg" height="25" alt="Windy"/></a>
+        </div>
+        <button id="popupCloseBtn" class="popup-close-fs">✕ Sulje</button>
       </div>
               `);
 
-              marker.on("popupopen", () => {
+              marker.on("popupopen", (e) => {
+                // On mobile, lift the popup out of the transformed map pane so
+                // the full-screen CSS (position:fixed) anchors to the viewport.
+                if (window.matchMedia("(max-width: 600px)").matches) {
+                  const el = e.popup.getElement();
+                  if (el) document.body.appendChild(el);
+                }
+
+                const closeBtn = document.getElementById("popupCloseBtn");
+                if (closeBtn)
+                  closeBtn.addEventListener("click", () =>
+                    marker.closePopup(),
+                  );
+
                 const tabInfoBtn = document.getElementById("tabInfoBtn");
                 const tabMoreBtn = document.getElementById("tabMoreBtn");
                 const tabInfo = document.getElementById("tabInfo");
