@@ -996,7 +996,13 @@
         </div>
         <button id="popupCloseBtn" class="popup-close-fs">✕ Sulje</button>
       </div>
-              `);
+              `,
+                {
+                  // On mobile the popup is full-screen, so panning the map to
+                  // "fit" it only scrolls spots away — keep the map still.
+                  autoPan: !window.matchMedia("(max-width: 600px)").matches,
+                },
+              );
 
               marker.on("popupopen", (e) => {
                 // On mobile, lift the popup out of the transformed map pane so
