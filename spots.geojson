@@ -155,7 +155,7 @@
       "type": "Feature",
       "properties": {
         "name": "Kuortane Kirkkoranta",
-        "best_wind_dir": [180, 235],
+        "best_wind_dir": [180, 235, 290, 350],
         "information": "./places/kuortane-kirkkoranta.md"
       },
       "geometry": { "type": "Point", "coordinates": [23.493791, 62.805918] }
