@@ -993,10 +993,11 @@
             if (isGood) arrowColor = "#65a30d";
             if (isVeryGood) arrowColor = "#16a34a";
 
-            // Nuoli näyttää minne tuulee (from + 180)
-            const arrow = `<svg class="dir-arrow" viewBox="0 0 24 24" style="transform: rotate(${
-              dir + 180
-            }deg)">
+            // Nuoli näyttää minne tuulee (ilmavirran suunta = from + 180).
+            // Nuolenkärki osoittaa rotate(0):lla alas (etelään, 180°), ja
+            // rotate(θ) kiertää myötäpäivään, joten kärki näyttää suuntaan
+            // 180 + θ. Halutaan dir + 180 ⇒ θ = dir.
+            const arrow = `<svg class="dir-arrow" viewBox="0 0 24 24" style="transform: rotate(${dir}deg)">
               <path d="M12 3 L12 19 M7 14 L12 19 L17 14" fill="none" stroke="${arrowColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>`;
 
