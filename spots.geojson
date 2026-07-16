@@ -341,6 +341,18 @@
         "coordinates": [23.11003555703823, 62.57366564072706],
         "type": "Point"
       }
+    },
+        {
+      "type": "Feature",
+      "properties": {
+        "name": "Matin mesta",
+        "best_wind_dir": [220, 260],
+        "information": "./places/matin-mesta.md"
+      },
+      "geometry": {
+        "coordinates": [23.3999158, 63.9447933],
+        "type": "Point"
+      }
     }
   ]
 }
