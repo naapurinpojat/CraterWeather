@@ -2,7 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
     <title>CraterWeather a Naapurinpojat solution Powered by Crater Surfers</title>
 
     <!-- PWA: asennettavuus + kotinäytön kuvake (suhteelliset polut /CraterWeather/ alipolkua varten) -->
@@ -451,7 +454,10 @@
           right: 0 !important;
           bottom: 0 !important;
           width: 100vw !important;
+          /* 100vh sisältää mobiiliselaimen palkin taakse jäävän alueen —
+             dvh seuraa näkyvää aluetta, jolloin Sulje-nappi pysyy ruudulla */
           height: 100vh !important;
+          height: 100dvh !important;
           margin: 0 !important;
           transform: none !important;
           z-index: 10000 !important;
@@ -464,9 +470,9 @@
         }
 
         .leaflet-popup-content-wrapper {
-          width: 100vw;
-          height: 100vh;
-          max-height: 100vh;
+          width: 100%;
+          height: 100%;
+          max-height: 100%;
           border-radius: 0;
           box-shadow: none;
           overflow: hidden;
@@ -478,6 +484,8 @@
           width: auto !important;
           max-width: none !important;
           margin: 16px;
+          /* Pidä alareunan nappi irti kaarevista kulmista / eleviivasta */
+          margin-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
           flex: 1;
           min-height: 0;
           display: flex;

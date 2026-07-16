@@ -1,6 +1,6 @@
 // Crater Weather service worker — tekee sovelluksesta asennettavan (PWA)
 // ja tarjoaa kevyen offline-välimuistin sovelluksen staattisille tiedostoille.
-const CACHE = "crater-v1";
+const CACHE = "crater-v2";
 
 // Sovelluksen "kuori" — suhteelliset polut, jotta toimii GitHub Pagesin
 // alipolussa (/CraterWeather/).
