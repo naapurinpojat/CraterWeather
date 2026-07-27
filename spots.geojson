@@ -342,7 +342,7 @@
         "type": "Point"
       }
     },
-        {
+    {
       "type": "Feature",
       "properties": {
         "name": "Matin mesta",
@@ -351,7 +351,31 @@
       },
       "geometry": {
         "coordinates": [23.3999158, 63.9447933],
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Kalajoen Hiekkasärkät",
+        "best_wind_dir": [200, 240, 10, 40,270,330]
+      },
+      "geometry": {
+        "coordinates": [23.8060605, 64.2372459],
         "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Kuortaneen Akinspotti",
+        "best_wind_dir": [135, 225]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          23.4722447,
+          62.8345227
+        ]
       }
     }
   ]
