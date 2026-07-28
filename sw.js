@@ -1,6 +1,9 @@
 // Crater Weather service worker — tekee sovelluksesta asennettavan (PWA)
 // ja tarjoaa kevyen offline-välimuistin sovelluksen staattisille tiedostoille.
-const CACHE = "crater-v2";
+const CACHE = "crater-v3";
+
+// Sääpalvelut: näitä ei koskaan tallenneta välimuistiin (ennusteet vanhenevat).
+const FORECAST_HOSTS = ["api.met.no", "api.open-meteo.com"];
 
 // Sovelluksen "kuori" — suhteelliset polut, jotta toimii GitHub Pagesin
 // alipolussa (/CraterWeather/).
@@ -30,7 +33,9 @@ self.addEventListener("activate", (event) => {
     caches
       .keys()
       .then((keys) =>
-        Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))),
+        Promise.all(
+          keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)),
+        ),
       )
       .then(() => self.clients.claim()),
   );
@@ -43,7 +48,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
 
   // Sää on aina haettava verkosta (ei välimuistia ennusteille).
-  if (url.hostname.endsWith("api.met.no")) return;
+  if (FORECAST_HOSTS.some((h) => url.hostname.endsWith(h))) return;
 
   // Cache-first: palautetaan välimuistista jos löytyy, muuten verkosta
   // (ja talletetaan samalla seuraavaa kertaa varten).

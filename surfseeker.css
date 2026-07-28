@@ -64,6 +64,22 @@
   background: #4a4a4a;
 }
 
+/* Pieni selite/tilarivi osion alle (esim. valitun mallin kuvaus) */
+#surfseeker-panel .ss-note {
+  font-size: 11px;
+  margin-top: 4px;
+  color: #4a4a4a;
+}
+
+#surfseeker-panel .ss-note.ss-warn {
+  color: #b91c1c;
+  font-weight: 700;
+}
+
+#surfseeker-panel .ss-note:empty {
+  display: none;
+}
+
 #surfseeker-panel .nav-btn {
   display: inline-block;
   margin-top: 4px;

@@ -23,6 +23,20 @@
       console.warn("Poistetaan virheellinen surfseeker_panel_open:", panel);
       localStorage.removeItem("surfseeker_panel_open");
     }
+
+    const provider = localStorage.getItem("surfseeker_provider");
+    if (
+      provider &&
+      ![
+        "metno",
+        "om:ecmwf_ifs025",
+        "om:dmi_harmonie_arome_europe",
+        "consensus",
+      ].includes(provider)
+    ) {
+      console.warn("Poistetaan virheellinen surfseeker_provider:", provider);
+      localStorage.removeItem("surfseeker_provider");
+    }
   } catch (e) {
     console.error("LocalStorage cleanup error", e);
   }
@@ -32,7 +46,25 @@ const LS = {
   panelOpen: "surfseeker_panel_open", // "1" | "0"
   dirMode: "surfseeker_dir_mode", // "to" | "from"
   sport: "surfseeker_sport", // "windsurf" | "kitesurf" | "kitefoil" | "wingfoil"
+  provider: "surfseeker_provider", // ks. PROVIDER_CHOICES
 };
+
+// Ennustemallit. Tunnukset vastaavat index.html:n PROVIDERS-avaimia.
+// "consensus" hakee kaikki kolme mallia ja pisteyttää niiden mediaanin.
+const PROVIDER_CHOICES = [
+  { id: "metno", label: "Yr", note: "Yr (met.no) — n. 10 vrk" },
+  { id: "om:ecmwf_ifs025", label: "ECMWF", note: "ECMWF 0,25° — n. 7 vrk" },
+  {
+    id: "om:dmi_harmonie_arome_europe",
+    label: "Harmonie 2 km",
+    note: "Harmonie 2 km — tarkka mutta vain n. 66 h",
+  },
+  {
+    id: "consensus",
+    label: "★ Yksimielisyys",
+    note: "Yr + ECMWF + Harmonie — pisteet mallien mediaanista",
+  },
+];
 
 const SPORT_THRESHOLDS = {
   windsurf: {
@@ -123,6 +155,18 @@ ready(() => {
       </div>
 
       <div class="ss-section">
+        <div><b>Malli</b></div>
+        <div id="ssProviderGroup" class="ss-row">
+          ${PROVIDER_CHOICES.map(
+            (p) =>
+              `<span class="chip" data-provider="${p.id}">${p.label}</span>`,
+          ).join("")}
+        </div>
+        <div id="ssProviderNote" class="ss-note"></div>
+        <div id="ssProviderStatus" class="ss-note ss-warn"></div>
+      </div>
+
+      <div class="ss-section">
         <div><b>Pikavalinnat</b></div>
         <div id="ssQuickRow" class="ss-row"></div>
       </div>
@@ -133,6 +177,7 @@ ready(() => {
   // 2) tila localStoragesta
   const state = {
     sport: lsGet(LS.sport, "windsurf"),
+    provider: lsGet(LS.provider, "metno"),
     open: lsGet(LS.panelOpen, "1") === "1",
   };
 
@@ -140,6 +185,12 @@ ready(() => {
   if (!Object.prototype.hasOwnProperty.call(SPORT_THRESHOLDS, state.sport)) {
     state.sport = "windsurf";
     lsSet(LS.sport, state.sport);
+  }
+
+  // normalisoi malli jos virheellinen
+  if (!PROVIDER_CHOICES.some((p) => p.id === state.provider)) {
+    state.provider = "metno";
+    lsSet(LS.provider, state.provider);
   }
 
   // 3) minimointi
@@ -180,6 +231,34 @@ ready(() => {
     applySportUI();
     refreshSpots();
   });
+
+  // 4b) ennustemalli
+  const ssProviderNote = panel.querySelector("#ssProviderNote");
+  const ssProviderStatus = panel.querySelector("#ssProviderStatus");
+  function applyProviderUI() {
+    panel.querySelectorAll("#ssProviderGroup .chip").forEach((chip) => {
+      chip.classList.toggle("active", chip.dataset.provider === state.provider);
+    });
+    const p = PROVIDER_CHOICES.find((x) => x.id === state.provider);
+    ssProviderNote.textContent = p ? p.note : "";
+    // Jaa valittu lähde index.html:n ennustehaulle
+    window.SURF_PROVIDER = state.provider;
+  }
+  applyProviderUI();
+  panel.querySelector("#ssProviderGroup").addEventListener("click", (e) => {
+    const chip = e.target.closest(".chip");
+    if (!chip) return;
+    state.provider = chip.dataset.provider;
+    lsSet(LS.provider, state.provider);
+    ssProviderStatus.textContent = "";
+    applyProviderUI();
+    refreshSpots();
+  });
+
+  // index.html kertoo tätä kautta esim. varalähteelle putoamisesta
+  window.surfApp.onStatus = (msg) => {
+    ssProviderStatus.textContent = msg || "";
+  };
 
   // 5) pikavalinnat
   const quickRow = panel.querySelector("#ssQuickRow");

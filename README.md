@@ -22,8 +22,9 @@
 - **Spot popup** with:
   - a **compass** showing the spot's optimal wind direction sector(s) and the current wind,
   - the **best upcoming score** (and when) plus the current score,
-  - a **48-hour forecast table** with wind/gust bars, per-hour score and the wind direction.
+  - a **forecast table** covering the whole forecast period, with wind/gust bars, per-hour score and the wind direction.
 - **Sport selector** — windsurf, kitesurf, kitefoil and wingfoil, each with its own wind thresholds (your choice is remembered).
+- **Forecast model selector** — Yr (met.no), ECMWF, Harmonie 2 km, or **Yksimielisyys** (consensus), which scores all three models and shows how much they agree (see below).
 - **No-surf / hazard zones** drawn on the map (shallows, rocks, etc.).
 - **Quick navigation** links to Google/Apple Maps and Windy for each spot.
 - **Installable as an app** on Android and iOS — see below.
@@ -37,6 +38,27 @@ The score (0–100) is `direction × speed × gust`:
 - **Gust** — steadier wind scores higher; a large gap between gusts and average wind lowers the score.
 
 Switching sport in the side panel re-scores every spot.
+
+### Forecast models and consensus
+
+A single model four days out is a coin flip, so the panel lets you pick the source — and compare them:
+
+| Model               | Source                                   | Reach                                                        |
+| ------------------- | ---------------------------------------- | ------------------------------------------------------------ |
+| **Yr**              | met.no directly                          | ~10 days (hourly, then 6-hourly)                             |
+| **ECMWF**           | Open-Meteo (`ecmwf_ifs025`)              | 7 days, hourly                                               |
+| **Harmonie 2 km**   | Open-Meteo (`dmi_harmonie_arome_europe`) | ~66 h, hourly — high resolution, best for local lake effects |
+| **★ Yksimielisyys** | Open-Meteo, all three at once            | 7 days (2 models once Harmonie runs out)                     |
+
+In consensus mode every model is scored **separately** and the median is taken, so disagreement about
+_direction_ counts as well as speed. The popup shows how far apart the models are for the best hour —
+✔ _Mallit yksimielisiä_ (≤1.5 m/s), ≈ _Jonkin verran hajontaa_ (≤3 m/s) or ⚠ _Epävarma_ — plus each
+model's own wind reading. Score pills in the forecast table fade as agreement drops.
+
+Open-Meteo fetches every spot and every model in a **single** request. If it is unreachable the app
+falls back to Yr and says so in the panel.
+
+Weather data: [met.no](https://www.met.no/) and [Open-Meteo](https://open-meteo.com/) (CC-BY-4.0).
 
 ## Install as an app (PWA)
 
@@ -55,7 +77,7 @@ The app shell works offline; weather forecasts always require a connection.
 
 ## Architecture
 
-CraterWeather is a zero-backend static web app: all logic runs in the browser, and weather comes directly from the met.no (Yr.no) API, called client-side. An optional local MCP server reuses the same scoring logic.
+CraterWeather is a zero-backend static web app: all logic runs in the browser, and weather comes directly from the met.no (Yr.no) and Open-Meteo APIs, called client-side (neither needs an API key). An optional local MCP server reuses the same scoring logic.
 
 <img src="architechture.png" width="600" >
 

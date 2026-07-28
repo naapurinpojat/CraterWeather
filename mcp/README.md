@@ -4,21 +4,33 @@ A local [Model Context Protocol](https://modelcontextprotocol.io) server that
 exposes Crater Weather's surfability logic as tools an LLM can call. It reuses
 the exact scoring from the web app (`mcp/logic.ts` is ported from
 `index.html` / `surfseeker.js`), pulls spots from the published
-`spots.geojson`, and fetches live forecasts from met.no.
+`spots.geojson`, and fetches live forecasts from met.no and Open-Meteo.
 
 > GitHub Pages is static hosting and **cannot run an MCP server**. This runs
 > locally (stdio transport); only the spot data is served from Pages.
 
 ## Tools
 
-| Tool | What it does |
-|------|--------------|
-| `list_spots` | All spots: name, coordinates, optimal wind sectors, notes. |
-| `spot_conditions` | Current + best-upcoming surfability for one spot. |
-| `rank_spots` | Ranks every spot by best upcoming score — "where's the best surf coming up?" |
-| `spot_forecast` | Hourly forecast for a spot with a score per hour. |
+| Tool              | What it does                                                                 |
+| ----------------- | ---------------------------------------------------------------------------- |
+| `list_spots`      | All spots: name, coordinates, optimal wind sectors, notes.                   |
+| `spot_conditions` | Current + best-upcoming surfability for one spot.                            |
+| `rank_spots`      | Ranks every spot by best upcoming score — "where's the best surf coming up?" |
+| `spot_forecast`   | Hourly forecast for a spot with a score per hour.                            |
 
-All scoring tools take a `sport` (`windsurf` \| `kitesurf` \| `kitefoil` \| `wingfoil`).
+All scoring tools take a `sport` (`windsurf` \| `kitesurf` \| `kitefoil` \| `wingfoil`)
+and a `provider`:
+
+| `provider`                     | Source                    | Reach    |
+| ------------------------------ | ------------------------- | -------- |
+| `metno` (default)              | met.no directly           | ~10 days |
+| `om:ecmwf_ifs025`              | Open-Meteo, ECMWF 0.25°   | 7 days   |
+| `om:dmi_harmonie_arome_europe` | Open-Meteo, Harmonie 2 km | ~66 h    |
+| `consensus`                    | Open-Meteo, all three     | 7 days   |
+
+With `consensus` each model is scored separately and the median is returned, and every hour also
+carries `models` (per-model wind), `spreadMs` and `agreement` (`ok` \| `mid` \| `low`) so the model
+disagreement is visible. This matches the web app's ★ Yksimielisyys mode exactly.
 
 ## Run / test
 
@@ -53,9 +65,10 @@ Add to `claude_desktop_config.json` (use an absolute path):
 
 ## Configuration (env vars)
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `CRATER_SPOTS_URL` | published `spots.geojson` on Pages | Where to load spots from (use a local path/URL for dev). |
-| `MET_USER_AGENT` | `CraterWeatherMCP/1.0 (github.com/naapurinpojat/CraterWeather)` | Identifying User-Agent — **met.no returns 403 without one**. |
+| Variable           | Default                                                         | Purpose                                                      |
+| ------------------ | --------------------------------------------------------------- | ------------------------------------------------------------ |
+| `CRATER_SPOTS_URL` | published `spots.geojson` on Pages                              | Where to load spots from (use a local path/URL for dev).     |
+| `MET_USER_AGENT`   | `CraterWeatherMCP/1.0 (github.com/naapurinpojat/CraterWeather)` | Identifying User-Agent — **met.no returns 403 without one**. |
 
-Spots are cached for 10 min and forecasts for 30 min to stay polite to met.no.
+Spots are cached for 10 min and forecasts for 30 min (per spot **and** provider) to stay polite to
+the upstream APIs. Neither met.no nor Open-Meteo needs an API key.

@@ -8,6 +8,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import {
   SPORTS,
+  PROVIDER_IDS,
   loadSpots,
   findSpot,
   scoreSpot,
@@ -18,6 +19,15 @@ const sportArg = z
   .enum(SPORTS as [string, ...string[]])
   .default("windsurf")
   .describe("Sport profile; sets the wind-speed thresholds used for scoring.");
+
+const providerArg = z
+  .enum(PROVIDER_IDS as [string, ...string[]])
+  .default("metno")
+  .describe(
+    "Forecast source. 'metno' = Yr (~10 days), 'om:ecmwf_ifs025' = ECMWF, " +
+      "'om:dmi_harmonie_arome_europe' = Harmonie 2 km (only ~66 h), " +
+      "'consensus' = median of all three plus a model-agreement indicator.",
+  );
 
 const server = new McpServer({ name: "crater-weather", version: "1.0.0" });
 
@@ -42,6 +52,7 @@ server.tool(
   {
     spot: z.string().describe("Spot name (full or partial, case-insensitive)."),
     sport: sportArg,
+    provider: providerArg,
     horizonHours: z
       .number()
       .int()
@@ -50,10 +61,12 @@ server.tool(
       .default(72)
       .describe("How far ahead to search for the best window."),
   },
-  async ({ spot, sport, horizonHours }) => {
+  async ({ spot, sport, provider, horizonHours }) => {
     const found = findSpot(await loadSpots(), spot);
     if (!found) return fail(`No spot matching "${spot}". Try list_spots.`);
-    return json(await scoreSpot(found, sport as any, horizonHours));
+    return json(
+      await scoreSpot(found, sport as any, horizonHours, provider as any),
+    );
   },
 );
 
@@ -62,6 +75,7 @@ server.tool(
   "Rank all spots by their best upcoming surfability score for a sport — answers 'where is the best surf coming up?'",
   {
     sport: sportArg,
+    provider: providerArg,
     horizonHours: z.number().int().positive().max(240).default(72),
     limit: z.number().int().positive().max(50).default(10),
     minScore: z
@@ -72,15 +86,20 @@ server.tool(
       .default(0)
       .describe("Only include spots whose best score is at least this."),
   },
-  async ({ sport, horizonHours, limit, minScore }) => {
+  async ({ sport, provider, horizonHours, limit, minScore }) => {
     const spots = await loadSpots();
     const scored = await Promise.all(
       spots.map((s) =>
-        scoreSpot(s, sport as any, horizonHours).catch(() => null),
+        scoreSpot(s, sport as any, horizonHours, provider as any).catch(
+          () => null,
+        ),
       ),
     );
     const ranked = scored
-      .filter((c): c is NonNullable<typeof c> => !!c?.best && c.best.score >= minScore)
+      .filter(
+        (c): c is NonNullable<typeof c> =>
+          !!c?.best && c.best.score >= minScore,
+      )
       .sort((a, b) => b.best!.score - a.best!.score)
       .slice(0, limit)
       .map((c) => ({
@@ -91,8 +110,17 @@ server.tool(
         bestGustMs: c.best!.gustMs,
         bestDirDeg: c.best!.dirDeg,
         currentScore: c.current.score,
+        // consensus only
+        agreement: c.best!.agreement,
+        spreadMs: c.best!.spreadMs,
       }));
-    return json({ sport, horizonHours, count: ranked.length, ranked });
+    return json({
+      sport,
+      provider,
+      horizonHours,
+      count: ranked.length,
+      ranked,
+    });
   },
 );
 
@@ -102,16 +130,18 @@ server.tool(
   {
     spot: z.string(),
     sport: sportArg,
+    provider: providerArg,
     hours: z.number().int().positive().max(96).default(24),
   },
-  async ({ spot, sport, hours }) => {
+  async ({ spot, sport, provider, hours }) => {
     const found = findSpot(await loadSpots(), spot);
     if (!found) return fail(`No spot matching "${spot}". Try list_spots.`);
     return json({
       spot: found.name,
       sport,
+      provider,
       hours,
-      forecast: await spotHourly(found, sport as any, hours),
+      forecast: await spotHourly(found, sport as any, hours, provider as any),
     });
   },
 );

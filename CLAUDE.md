@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-CraterWeather is a **zero-backend static web app** that shows windsurf/kite/foil spots on a map of Finland with live wind forecasts. It is deployed as-is to GitHub Pages (<https://naapurinpojat.github.io/CraterWeather>). All logic runs in the browser; there is no build step and no API server of our own — weather comes directly from the met.no (Yr.no) public API, called client-side.
+CraterWeather is a **zero-backend static web app** that shows windsurf/kite/foil spots on a map of Finland with live wind forecasts. It is deployed as-is to GitHub Pages (<https://naapurinpojat.github.io/CraterWeather>). All logic runs in the browser; there is no build step and no API server of our own — weather comes directly from the met.no (Yr.no) and Open-Meteo public APIs, called client-side (neither needs an API key).
 
 Much of the code and all UI strings are in **Finnish**. Match that when editing.
 
@@ -27,8 +27,8 @@ Note: the Dockerfile/devcontainer reference port 5173 but the server actually li
 
 Three layers, loaded in a deliberate order from `index.html`:
 
-1. **`index.html` inline `<script>`** — the core. Initializes the Leaflet map, defines the global `window.surfApp = { map, refreshSpots }`, fetches `spots.geojson`, and renders markers/popups. Each spot marker fetches its own forecast from met.no on render. It owns the scoring (`surfabilityScore`/`scoreColor`), the score-badge map marker (`createScoreIcon`), the popup compass (`buildWindCompass`), and the 48-hour forecast table (`buildForecastTable`).
-2. **`surfseeker.js`** (loaded `defer`, **not** a module — it depends on the global `window.surfApp`) — adds the floating control panel (sport selector, quick-view jumps). On sport change it publishes the active thresholds to `window.SURF_THRESHOLDS` and calls `refreshSpots()`, which re-scores every spot. It waits via a `ready()` poll until `window.surfApp` exists, so load order matters: `surfApp` must be set in the inline script before `surfseeker.js` runs.
+1. **`index.html` inline `<script>`** — the core. Initializes the Leaflet map, defines the global `window.surfApp = { map, refreshSpots, onStatus }`, fetches `spots.geojson`, and renders markers/popups. `refreshSpots()` loads **all** forecasts up front (see "Forecast providers"), then builds markers synchronously via `buildSpotMarker`. It owns the scoring (`surfabilityScore`/`hourScore`/`scoreColor`), the score-badge map marker (`createScoreIcon`), the popup compass (`buildWindCompass`), and the forecast table (`buildForecastTable`).
+2. **`surfseeker.js`** (loaded `defer`, **not** a module — it depends on the global `window.surfApp`) — adds the floating control panel (sport selector, forecast-model selector, quick-view jumps). On sport change it publishes the active thresholds to `window.SURF_THRESHOLDS`; on model change it publishes `window.SURF_PROVIDER`; both then call `refreshSpots()`, which re-scores every spot. It also installs `window.surfApp.onStatus` so `index.html` can report provider fallbacks into the panel. It waits via a `ready()` poll until `window.surfApp` exists, so load order matters: `surfApp` must be set in the inline script before `surfseeker.js` runs.
 3. **`surfseeker.css`** — styles for the panel (map/popup styles are inline in `index.html`).
 
 ### Data model — `spots.geojson`
@@ -43,12 +43,24 @@ Single GeoJSON FeatureCollection that drives everything. Two kinds of features:
 
 To add a spot: define geometry in geojson.io, append the feature to `spots.geojson`, and add the matching `places/<slug>.md` (free-form Finnish description shown in the popup).
 
+### Forecast providers (where the weather comes from)
+
+`index.html` defines a small provider layer; **nothing downstream of it sees provider-specific JSON**.
+
+- `PROVIDERS` maps an id to a source: `metno` (met.no directly, ~10 days, one request per spot in parallel), `om:ecmwf_ifs025`, `om:dmi_harmonie_arome_europe` (Harmonie 2 km, only ~66 h), and `consensus` (all three at once).
+- `loadForecasts(points, providerId)` returns `Map<ptKey(lat,lon), Forecast>`. **Open-Meteo fetches every spot and every model in one request** — coordinates are passed comma-separated and the response is an array in the same order.
+- Everything is normalized to `Forecast = { hours: [Hour], models, provider }` where `Hour = { time, wind, gust|null, dir, temp|null, members, spread }`. `members`/`spread` are non-null only in consensus mode. `trimPast()` drops past hours so `hours[0]` is always "now" (met.no starts at now, Open-Meteo at midnight UTC).
+- Two Open-Meteo gotchas the normalizer handles: variables are **only** suffixed with the model name when more than one model is requested (`wind_speed_10m_ecmwf_ifs025` vs plain `wind_speed_10m`), and models past their horizon return `null` (Harmonie beyond ~66 h) — those members are dropped, so a consensus hour may have 2 of 3 models.
+- `loadForecastsSafely()` falls back to met.no if the chosen source fails and reports it via `window.surfApp.onStatus`.
+- Any new forecast host must be added to `FORECAST_HOSTS` in `sw.js` or the service worker will cache stale forecasts.
+
 ### Wind logic & surfability score (where the quality rules live)
 
 - `SPORT_THRESHOLDS` in `surfseeker.js` defines per-sport "good" and "very good" wind-speed bands (windsurf / kitesurf / kitefoil / wingfoil). The active sport is persisted in `localStorage` (keys prefixed `surfseeker_`) and exposed to the scorer via `window.SURF_THRESHOLDS` (with a windsurf fallback `DEFAULT_THRESHOLDS` in `index.html` for the first render).
 - `surfabilityScore(wind, gust, dir, bestDirs, thr)` in `index.html` returns 0–100 = **direction × speed × gust**: graded direction match (1.0 in `best_wind_dir`, linear falloff over 45°), a speed curve peaking near the "very good" threshold, and a gustiness penalty (gap between gust and wind). `scoreColor()` maps the score to the gray/amber/lime/green scale used everywhere.
-- **Map markers show the *best* score across the whole forecast** (`createScoreIcon`), so the map answers "is good weather coming here?" at a glance. The popup shows that best score + when, plus the current score, the optimal-direction compass, and a per-hour score column in the table.
-- When changing scoring, edit `surfabilityScore`/`scoreColor` in `index.html`; the table, compass, marker, and info badge all consume them, so they stay consistent automatically.
+- `hourScore(hour, bestDirs, thr)` is what everything actually calls. For a single model it is just `surfabilityScore`; **in consensus mode it scores each model separately and takes the median**, so disagreement about direction lowers the score too, not only speed spread. `confidenceOf(hour)` turns `hour.spread` (max−min wind across models, m/s) into `ok` ≤1.5 / `mid` ≤3 / `low`, used by the popup badge and the faded score pills.
+- **Map markers show the _best_ score across the whole forecast** (`createScoreIcon`), so the map answers "is good weather coming here?" at a glance. The popup shows that best score + when, plus the current score, the optimal-direction compass, and a per-hour score column in the table.
+- When changing scoring, edit `surfabilityScore`/`hourScore`/`scoreColor` in `index.html`; the table, compass, marker, and info badge all consume them, so they stay consistent automatically.
 
 ### Map projection
 
@@ -61,7 +73,7 @@ External libraries (Leaflet, axios, marked, proj4, proj4leaflet) are loaded from
 The site is an installable Progressive Web App (Android home-screen / iOS Add to Home Screen):
 
 - `manifest.webmanifest` — app metadata + icons, `display: standalone`.
-- `sw.js` — service worker registered at the end of `index.html`. Caches the app shell **cache-first**, but **never caches `api.met.no`** so forecasts stay live. Bump `CACHE` (`"crater-v1"`) whenever cached assets change, or clients keep stale files.
+- `sw.js` — service worker registered at the end of `index.html`. Caches the app shell **cache-first**, but **never caches the hosts in `FORECAST_HOSTS`** (`api.met.no`, `api.open-meteo.com`) so forecasts stay live — add any new forecast host there. Bump `CACHE` (`"crater-v3"`) whenever cached assets change, or clients keep stale files.
 - `icons/icon-192.png` + `icon-512.png` — the icons the manifest and `index.html` actually use.
 - **All PWA paths must stay relative (`./`).** The deployed site is a GitHub Pages _project_ site under `/CraterWeather/`; absolute `/…` paths resolve to the user-site root and break the manifest/SW/icons.
 - Service workers only run over HTTPS (GitHub Pages) or `localhost` — not over `file://`.
@@ -70,4 +82,4 @@ Gotcha — duplicate icon sets: the repo root also has favicon-generator output 
 
 ## MCP server (`mcp/`)
 
-A local stdio MCP server exposing the surfability logic as tools (`list_spots`, `spot_conditions`, `rank_spots`, `spot_forecast`). `mcp/logic.ts` is **ported from the browser scoring** in `index.html`/`surfseeker.js` — if you change `surfabilityScore`/`SPORT_THRESHOLDS` in one place, update the other to keep them in sync. It loads spots from the published `spots.geojson` (`CRATER_SPOTS_URL`) and calls met.no with a required `User-Agent` (`MET_USER_AGENT`; met.no 403s without one). Run with `bun run mcp`; `.mcp.json` auto-registers it for Claude Code. Adds runtime deps `@modelcontextprotocol/sdk` + `zod` (the only non-dev dependencies in the project). See `mcp/README.md`.
+A local stdio MCP server exposing the surfability logic as tools (`list_spots`, `spot_conditions`, `rank_spots`, `spot_forecast`), each taking a `sport` and a `provider`. `mcp/logic.ts` is **ported from the browser** in `index.html`/`surfseeker.js` — the scoring (`surfabilityScore`, `hourScore`, `SPORT_THRESHOLDS`) _and_ the provider layer (`PROVIDERS`, `normalizeMetNo`, `normalizeOpenMeteo`, `combineMembers`, `trimPast`) exist in both; if you change one, update the other to keep them in sync. Unlike the browser it fetches **per spot**, not batched, and caches per spot _and_ provider for 30 min. It loads spots from the published `spots.geojson` (`CRATER_SPOTS_URL`) and calls met.no with a required `User-Agent` (`MET_USER_AGENT`; met.no 403s without one). Run with `bun run mcp`; `.mcp.json` auto-registers it for Claude Code. Adds runtime deps `@modelcontextprotocol/sdk` + `zod` (the only non-dev dependencies in the project). See `mcp/README.md`.

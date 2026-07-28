@@ -6,16 +6,26 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
-    <title>CraterWeather a Naapurinpojat solution Powered by Crater Surfers</title>
+    <title>
+      CraterWeather a Naapurinpojat solution Powered by Crater Surfers
+    </title>
 
     <!-- PWA: asennettavuus + kotinäytön kuvake (suhteelliset polut /CraterWeather/ alipolkua varten) -->
     <meta name="theme-color" content="#6e571a" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
     <meta name="apple-mobile-web-app-title" content="Crater" />
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="./icons/icon-192.png"
+    />
     <link rel="apple-touch-icon" href="./icons/icon-192.png" />
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
@@ -71,6 +81,18 @@
         z-index: 1000;
         font-family: "Tahoma", "sans-serif";
         font-size: 24px;
+      }
+
+      .wx-credit {
+        font-size: 10px;
+        font-weight: normal;
+        color: #555;
+        text-shadow: none;
+        text-align: center;
+        margin-top: 2px;
+      }
+      .wx-credit a {
+        color: #555;
       }
 
       .wind-marker {
@@ -217,6 +239,39 @@
         font-size: 10px;
         text-align: center;
         text-shadow: 0 0 2px rgba(0, 0, 0, 0.35);
+      }
+
+      /* Yksimielisyystila: mitä enemmän mallit eroavat, sitä haaleampi pisteet */
+      .score-pill.conf-mid {
+        opacity: 0.75;
+      }
+      .score-pill.conf-low {
+        opacity: 0.45;
+      }
+
+      .conf-badge {
+        font-size: 11px;
+        font-weight: 700;
+        margin-bottom: 3px;
+      }
+      .conf-badge.conf-ok {
+        color: #16a34a;
+      }
+      .conf-badge.conf-mid {
+        color: #b45309;
+      }
+      .conf-badge.conf-low {
+        color: #b91c1c;
+      }
+      .conf-members {
+        font-size: 10px;
+        color: #555;
+        margin-bottom: 4px;
+      }
+      .popup-source {
+        font-size: 10px;
+        color: #777;
+        margin: 2px 0 4px;
       }
 
       .wind-bar {
@@ -872,12 +927,273 @@
         });
       }
 
-      // Fetch forecast from Yr.no
-      async function fetchForecast(lat, lon) {
+      // ------------------------------------------------------------------
+      // Sääpalvelut (providerit)
+      //
+      // Kaikki lähteet normalisoidaan samaan muotoon, jotta pisteytys,
+      // taulukko, kompassi ja matriisi eivät tiedä lähteestä mitään:
+      //
+      //   Forecast = { hours: [Hour], models: ["Yr", ...], provider: id }
+      //   Hour     = { time, wind, gust|null, dir, temp|null, members, spread }
+      //
+      // members/spread ovat ei-null vain yksimielisyystilassa, jossa jokainen
+      // malli on oma jäsenensä ja spread = mallien tuulieron leveys (m/s).
+      // ------------------------------------------------------------------
+
+      const OM_URL = "https://api.open-meteo.com/v1/forecast";
+      const OM_VARS =
+        "wind_speed_10m,wind_gusts_10m,wind_direction_10m,temperature_2m";
+
+      // Open-Meteon mallitunnukset -> lyhyt näyttönimi
+      const OM_MODELS = {
+        metno_seamless: "Yr",
+        ecmwf_ifs025: "ECMWF",
+        dmi_harmonie_arome_europe: "Harmonie",
+      };
+
+      // Harmonie (2 km) ulottuu vain ~66 h, muut ~10 vrk.
+      const PROVIDERS = {
+        metno: { label: "Yr (met.no)", source: "metno" },
+        "om:ecmwf_ifs025": {
+          label: "ECMWF",
+          source: "om",
+          models: ["ecmwf_ifs025"],
+          days: 7,
+        },
+        "om:dmi_harmonie_arome_europe": {
+          label: "Harmonie 2 km",
+          source: "om",
+          models: ["dmi_harmonie_arome_europe"],
+          days: 3,
+        },
+        consensus: {
+          label: "Yksimielisyys",
+          source: "om",
+          models: [
+            "metno_seamless",
+            "ecmwf_ifs025",
+            "dmi_harmonie_arome_europe",
+          ],
+          days: 7,
+          consensus: true,
+        },
+      };
+      const DEFAULT_PROVIDER = "metno";
+
+      // surfseeker.js asettaa window.SURF_PROVIDERin; muutoin met.no kuten ennen.
+      function activeProvider() {
+        const id = window.SURF_PROVIDER;
+        return PROVIDERS[id] ? id : DEFAULT_PROVIDER;
+      }
+
+      // Ennusteet avaimennetaan koordinaatilla, ei nimellä (nimet voivat toistua)
+      const ptKey = (lat, lon) => `${lat.toFixed(5)},${lon.toFixed(5)}`;
+
+      const median = (nums) => {
+        const a = [...nums].sort((x, y) => x - y);
+        const mid = a.length >> 1;
+        return a.length % 2 ? a[mid] : (a[mid - 1] + a[mid]) / 2;
+      };
+
+      // Suuntien keskiarvo ympyrällä: 350° ja 10° -> 0°, ei 180°
+      function circularMean(degs) {
+        let sx = 0;
+        let sy = 0;
+        degs.forEach((d) => {
+          const r = (d * Math.PI) / 180;
+          sx += Math.cos(r);
+          sy += Math.sin(r);
+        });
+        if (sx === 0 && sy === 0) return degs[0];
+        return ((Math.atan2(sy, sx) * 180) / Math.PI + 360) % 360;
+      }
+
+      // Menneet tunnit pois: met.no alkaa nykyhetkestä, Open-Meteo vuorokauden
+      // alusta. Karsinnan jälkeen hours[0] on "nyt" kummallakin lähteellä.
+      function trimPast(hours) {
+        const cutoff = Date.now() - 3600 * 1000;
+        const i = hours.findIndex((h) => new Date(h.time).getTime() >= cutoff);
+        return i < 0 ? [] : hours.slice(i);
+      }
+
+      // Yhdistä yhden tunnin mallijäsenet yhdeksi Houriksi
+      function combineMembers(time, members, consensus) {
+        if (members.length === 1) {
+          const m = members[0];
+          return {
+            time,
+            wind: m.wind,
+            gust: m.gust,
+            dir: m.dir,
+            temp: m.temp,
+            members: consensus ? members : null,
+            spread: consensus ? 0 : null,
+          };
+        }
+        const winds = members.map((m) => m.wind);
+        const gusts = members
+          .map((m) => m.gust)
+          .filter((g) => Number.isFinite(g));
+        const temps = members
+          .map((m) => m.temp)
+          .filter((t) => Number.isFinite(t));
+        return {
+          time,
+          wind: median(winds),
+          gust: gusts.length ? median(gusts) : null,
+          dir: circularMean(members.map((m) => m.dir)),
+          temp: temps.length ? median(temps) : null,
+          members,
+          spread: Math.max(...winds) - Math.min(...winds),
+        };
+      }
+
+      // --- met.no (Yr) ---------------------------------------------------
+      async function fetchMetNo(lat, lon) {
         const res = await axios.get(
           `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`,
         );
         return res.data;
+      }
+
+      function normalizeMetNo(data) {
+        const series =
+          (data && data.properties && data.properties.timeseries) || [];
+        const hours = [];
+        series.forEach((e) => {
+          const det = e.data && e.data.instant && e.data.instant.details;
+          if (!det) return;
+          if (
+            !Number.isFinite(det.wind_speed) ||
+            !Number.isFinite(det.wind_from_direction)
+          )
+            return;
+          hours.push({
+            time: e.time,
+            wind: det.wind_speed,
+            gust: Number.isFinite(det.wind_speed_of_gust)
+              ? det.wind_speed_of_gust
+              : null,
+            dir: det.wind_from_direction,
+            temp: Number.isFinite(det.air_temperature)
+              ? det.air_temperature
+              : null,
+            members: null,
+            spread: null,
+          });
+        });
+        return { hours: trimPast(hours), models: ["Yr"], provider: "metno" };
+      }
+
+      // --- Open-Meteo ----------------------------------------------------
+      // Yksi pyyntö hakee kaikki paikat JA kaikki mallit kerralla: paikat
+      // pilkulla eroteltuina, vastaus taulukkona samassa järjestyksessä.
+      async function fetchOpenMeteo(points, models, days) {
+        const lat = points.map((p) => p.lat.toFixed(4)).join(",");
+        const lon = points.map((p) => p.lon.toFixed(4)).join(",");
+        const url =
+          `${OM_URL}?latitude=${lat}&longitude=${lon}&hourly=${OM_VARS}` +
+          `&wind_speed_unit=ms&timezone=UTC&forecast_days=${days}` +
+          `&cell_selection=sea&models=${models.join(",")}`;
+        const res = await axios.get(url);
+        const list = Array.isArray(res.data) ? res.data : [res.data];
+        if (list.length !== points.length)
+          throw new Error("Open-Meteo palautti väärän määrän paikkoja");
+        return list;
+      }
+
+      function normalizeOpenMeteo(loc, models, consensus) {
+        const h = (loc && loc.hourly) || {};
+        const times = h.time || [];
+        // Open-Meteo lisää mallin nimen muuttujaan vain jos malleja on
+        // useampi — yhden mallin haussa sarake on pelkkä "wind_speed_10m".
+        const at = (name, model, i) => {
+          const col = h[`${name}_${model}`] || h[name];
+          return col ? col[i] : undefined;
+        };
+        const hours = [];
+        for (let i = 0; i < times.length; i++) {
+          const members = [];
+          models.forEach((m) => {
+            const wind = at("wind_speed_10m", m, i);
+            const dir = at("wind_direction_10m", m, i);
+            // null = malli ei yllä näin pitkälle (esim. Harmonie yli 66 h)
+            if (!Number.isFinite(wind) || !Number.isFinite(dir)) return;
+            const gust = at("wind_gusts_10m", m, i);
+            const temp = at("temperature_2m", m, i);
+            members.push({
+              model: OM_MODELS[m] || m,
+              wind,
+              dir,
+              gust: Number.isFinite(gust) ? gust : null,
+              temp: Number.isFinite(temp) ? temp : null,
+            });
+          });
+          if (!members.length) continue;
+          // Open-Meteon aika on UTC ilman Z-päätettä ("2026-07-28T12:00")
+          hours.push(combineMembers(`${times[i]}:00Z`, members, consensus));
+        }
+        return {
+          hours: trimPast(hours),
+          models: models.map((m) => OM_MODELS[m] || m),
+          provider: consensus ? "consensus" : "om",
+        };
+      }
+
+      // --- Yhteinen lataus ------------------------------------------------
+      // points = [{ name, lat, lon }] -> Map<ptKey, Forecast|null>
+      async function loadForecasts(points, providerId) {
+        const conf = PROVIDERS[providerId] || PROVIDERS[DEFAULT_PROVIDER];
+        const out = new Map();
+        if (conf.source === "metno") {
+          const list = await Promise.all(
+            points.map((pt) =>
+              fetchMetNo(pt.lat, pt.lon)
+                .then(normalizeMetNo)
+                .catch((err) => {
+                  console.error("met.no epäonnistui:", pt.name, err);
+                  return null;
+                }),
+            ),
+          );
+          points.forEach((pt, i) => out.set(ptKey(pt.lat, pt.lon), list[i]));
+          return out;
+        }
+        const locs = await fetchOpenMeteo(points, conf.models, conf.days);
+        points.forEach((pt, i) =>
+          out.set(
+            ptKey(pt.lat, pt.lon),
+            normalizeOpenMeteo(locs[i], conf.models, !!conf.consensus),
+          ),
+        );
+        return out;
+      }
+
+      function providerStatus(msg) {
+        if (window.surfApp && typeof window.surfApp.onStatus === "function")
+          window.surfApp.onStatus(msg);
+      }
+
+      // Jos valittu lähde kaatuu, pudotaan takaisin met.no:hon eikä jäädä
+      // tyhjien merkkien varaan (aiemmin epäonnistunut haku hävisi hiljaa).
+      async function loadForecastsSafely(points) {
+        const id = activeProvider();
+        try {
+          const forecasts = await loadForecasts(points, id);
+          providerStatus(null);
+          return { id, forecasts };
+        } catch (err) {
+          console.error("Ennustelähde epäonnistui:", id, err);
+          if (id === DEFAULT_PROVIDER) {
+            providerStatus("Ennusteiden haku epäonnistui.");
+            return { id, forecasts: new Map() };
+          }
+          providerStatus(`${PROVIDERS[id].label} ei vastaa — käytetään Yr:ää.`);
+          const forecasts = await loadForecasts(points, DEFAULT_PROVIDER).catch(
+            () => new Map(),
+          );
+          return { id: DEFAULT_PROVIDER, forecasts };
+        }
       }
 
       // Onko tuulen suunta spotin parhaalla sektorilla (tukee 1 tai 2 sektoria)
@@ -956,13 +1272,67 @@
         return "#9ca3af";
       }
 
+      // Yhden normalisoidun tunnin pisteet. Yksimielisyystilassa jokainen malli
+      // pisteytetään erikseen ja otetaan mediaani — näin myös mallien erimieli-
+      // syys suunnasta laskee pisteitä, ei vain tuulen nopeuden hajonta.
+      function hourScore(hour, bestDirs, thr) {
+        const g = (w, gu) => (Number.isFinite(gu) ? gu : w);
+        if (hour.members && hour.members.length > 1) {
+          return Math.round(
+            median(
+              hour.members.map((m) =>
+                surfabilityScore(
+                  m.wind,
+                  g(m.wind, m.gust),
+                  m.dir,
+                  bestDirs,
+                  thr,
+                ),
+              ),
+            ),
+          );
+        }
+        return surfabilityScore(
+          hour.wind,
+          g(hour.wind, hour.gust),
+          hour.dir,
+          bestDirs,
+          thr,
+        );
+      }
+
+      // Mallien yksimielisyys: kuinka leveä tuulihaarukka mallien välillä on.
+      const CONF_OK_MS = 1.5;
+      const CONF_MID_MS = 3;
+      function confidenceOf(hour) {
+        if (!hour.members || hour.members.length < 2) return null;
+        const level =
+          hour.spread <= CONF_OK_MS
+            ? "ok"
+            : hour.spread <= CONF_MID_MS
+              ? "mid"
+              : "low";
+        return {
+          level,
+          spread: hour.spread,
+          n: hour.members.length,
+          icon: level === "ok" ? "✔" : level === "mid" ? "≈" : "⚠",
+          label:
+            level === "ok"
+              ? "Mallit yksimielisiä"
+              : level === "mid"
+                ? "Jonkin verran hajontaa"
+                : "Epävarma",
+        };
+      }
+
       // Build forecast table
-      function buildForecastTable(timeseries, bestDirs) {
+      function buildForecastTable(hours, bestDirs) {
         const thr = activeThresholds();
         let lastDay = "";
-        // Show every timestep met.no returns (~10 days: hourly for the first
-        // days, then 6-hourly), not just the first 48 hours.
-        const rows = timeseries
+        // Näytetään koko lähteen ennustejakso (met.no ~10 vrk: ensin tunneittain,
+        // sitten 6 h välein; Open-Meteo tunneittain), ei vain 48 h.
+        const rows = hours
           .map((entry) => {
             const d = new Date(entry.time);
             const dayLabel = d.toLocaleDateString("fi-FI", {
@@ -976,24 +1346,18 @@
               hour: "2-digit",
               minute: "2-digit",
             });
-            const det = entry.data.instant.details;
-            const wind = det.wind_speed;
-            const gust = det.wind_speed_of_gust;
-            const dir = det.wind_from_direction;
-            const temperature = det.air_temperature;
+            const wind = entry.wind;
+            const gust = entry.gust;
+            const dir = entry.dir;
+            const temperature = entry.temp;
 
             const inBest = dirInBest(dir, bestDirs);
             const isGood = wind >= thr.good[0] && wind < thr.very && inBest;
             const isVeryGood = wind >= thr.very && inBest;
             const rowClass = isVeryGood ? "verygood" : isGood ? "good" : "";
             const hasGust = Number.isFinite(gust);
-            const score = surfabilityScore(
-              wind,
-              hasGust ? gust : wind,
-              dir,
-              bestDirs,
-              thr,
-            );
+            const score = hourScore(entry, bestDirs, thr);
+            const conf = confidenceOf(entry);
 
             // Nuolen väri suunnan/laadun mukaan
             let arrowColor = "#9c8a52"; // ei sektorilla
@@ -1044,10 +1408,18 @@
             )}°</td>
             <td class="t-wind">${windBar}</td>
             <td class="t-gust">${gustBar}</td>
-            <td class="t-temp">${temperature.toFixed(1)}°</td>
-            <td class="t-score"><span class="score-pill" style="background:${scoreColor(
-              score,
-            )}">${score}</span></td>
+            <td class="t-temp">${
+              Number.isFinite(temperature) ? `${temperature.toFixed(1)}°` : "–"
+            }</td>
+            <td class="t-score"><span class="score-pill${
+              conf ? ` conf-${conf.level}` : ""
+            }" style="background:${scoreColor(score)}"${
+              conf
+                ? ` title="${conf.icon} ${conf.label} — ${
+                    conf.n
+                  } mallia, tuuliero ±${conf.spread.toFixed(1)} m/s"`
+                : ""
+            }>${score}</span></td>
           </tr>`;
           })
           .join("");
@@ -1146,12 +1518,32 @@
       // ennusteet latautuvat; tyhjennetään refreshSpotsissa (lajinvaihto).
       const spotMatrix = new Map();
 
-      // overlay logo
+      // overlay logo + sääaineiston lähteet (Open-Meteo on CC-BY-4.0)
       document.querySelector(".overlay-text-bottom").innerHTML =
-        '<a href="https://github.com/naapurinpojat/CraterWeather/" target="_blank"><img id="scaledImage" src="craterweather.jpg" height="50" alt="Crater Weather"/></a>';
+        '<a href="https://github.com/naapurinpojat/CraterWeather/" target="_blank"><img id="scaledImage" src="craterweather.jpg" height="50" alt="Crater Weather"/></a>' +
+        '<div class="wx-credit">Sää: <a href="https://www.met.no/" target="_blank">met.no</a> &amp; <a href="https://open-meteo.com/" target="_blank">Open-Meteo</a></div>';
+
+      // Juokseva numero: hidas päivitys ei saa yliajaa uudempaa (esim. jos
+      // lajia tai mallia vaihtaa nopeasti peräkkäin).
+      let refreshSeq = 0;
 
       async function refreshSpots() {
         if (!spotData) return;
+        const seq = ++refreshSeq;
+
+        // Ennusteet haetaan kaikille spoteille ennen piirtoa: Open-Meteolta
+        // koko joukko yhdellä pyynnöllä, met.no:lta rinnakkain per paikka.
+        const points = spotData.features
+          .filter((f) => f.geometry && f.geometry.type === "Point")
+          .map((f) => ({
+            name: f.properties.name,
+            lat: f.geometry.coordinates[1],
+            lon: f.geometry.coordinates[0],
+          }));
+
+        const { id, forecasts } = await loadForecastsSafely(points);
+        if (seq !== refreshSeq) return; // uudempi päivitys ehti jo väliin
+
         if (geoLayer) map.removeLayer(geoLayer);
         spotMatrix.clear();
 
@@ -1177,93 +1569,127 @@
             }
           },
           pointToLayer: function (feature, latlng) {
-            const marker = L.marker(latlng);
-            fetchForecast(latlng.lat, latlng.lng).then((data) => {
-              const timeseries = data.properties.timeseries;
-              const current = timeseries[0].data.instant.details;
-              const wind = current.wind_speed;
-              const gust = current.wind_speed_of_gust;
-              const dir = current.wind_from_direction;
-              const temperature = current.air_temperature;
-              const score = surfabilityScore(
-                wind,
-                gust,
-                dir,
-                feature.properties.best_wind_dir,
-              );
+            return buildSpotMarker(
+              feature,
+              latlng,
+              forecasts.get(ptKey(latlng.lat, latlng.lng)),
+              id,
+            );
+          },
+        }).addTo(map);
+      }
 
-              // Paras surffattavuus koko ennustejaksolla -> karttamerkkiin.
-              // Lisäksi lasketaan, montako tuntia yltää surffattavaan (>=70):
-              // useampi tunti = pidempi kelikeli, ei vain yksittäinen piikki.
-              let bestScore = 0;
-              let bestTime = null;
-              let surfableHours = 0;
-              const scoreSeries = [];
-              timeseries.forEach((e) => {
-                const det = e.data.instant.details;
-                if (!det) return;
-                const g =
-                  typeof det.wind_speed_of_gust === "number"
-                    ? det.wind_speed_of_gust
-                    : det.wind_speed;
-                const s = surfabilityScore(
-                  det.wind_speed,
-                  g,
-                  det.wind_from_direction,
-                  feature.properties.best_wind_dir,
-                );
-                if (s > bestScore) {
-                  bestScore = s;
-                  bestTime = e.time;
-                }
-                if (s >= SURFABLE_SCORE) surfableHours++;
-                scoreSeries.push({ time: e.time, score: s });
-              });
-              spotMatrix.set(feature.properties.name, {
-                series: scoreSeries,
-                bestDir: feature.properties.best_wind_dir,
-              });
-              const bestWhen = bestTime
-                ? new Date(bestTime).toLocaleString("fi-FI", {
-                    timeZone: "Europe/Helsinki",
-                    weekday: "short",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : "";
+      // Yksi spotti-marker valmiista, normalisoidusta ennusteesta.
+      function buildSpotMarker(feature, latlng, forecast, providerId) {
+        const marker = L.marker(latlng);
+        const props = feature.properties || {};
+        const bestDirs = props.best_wind_dir;
 
-              const gmapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${latlng.lat},${latlng.lng}`;
-              const windyUrl = `https://www.windy.com/${latlng.lat}/${latlng.lng}/wind?${latlng.lat},${latlng.lng},13`;
-              const applemapsUrl = `https://maps.apple.com/?ll=${latlng.lat},${latlng.lng}`;
-              let mapsUrl = "";
-              if (isAppleDevice()) {
-                mapsUrl = applemapsUrl;
-              } else {
-                mapsUrl = gmapsUrl;
-              }
+        if (!forecast || !forecast.hours.length) {
+          // scoreColor("?") palauttaa harmaan -> neutraali merkki
+          marker.setIcon(createScoreIcon("?", 0));
+          marker.bindPopup(
+            `<b>${props.name || ""}</b><br>Ennustetta ei saatavilla juuri nyt.`,
+          );
+          return marker;
+        }
 
-              marker.setIcon(createScoreIcon(bestScore, surfableHours));
-              const table = buildForecastTable(
-                timeseries,
-                feature.properties.best_wind_dir,
-              );
-              const compass = buildWindCompass(
-                feature.properties.best_wind_dir,
-                dir,
-              );
+        const hours = forecast.hours;
+        const thr = activeThresholds();
+        const current = hours[0];
+        const wind = current.wind;
+        const dir = current.dir;
+        const temperature = current.temp;
+        const score = hourScore(current, bestDirs, thr);
+        const srcLabel = (PROVIDERS[providerId] || {}).label || providerId;
 
-              marker.bindPopup(`
+        // Paras surffattavuus koko ennustejaksolla -> karttamerkkiin.
+        // Lisäksi lasketaan, montako tuntia yltää surffattavaan (>=70):
+        // useampi tunti = pidempi kelikeli, ei vain yksittäinen piikki.
+        let bestScore = 0;
+        let bestTime = null;
+        let bestHour = null;
+        let surfableHours = 0;
+        const scoreSeries = [];
+        hours.forEach((h, i) => {
+          const s = hourScore(h, bestDirs, thr);
+          if (s > bestScore) {
+            bestScore = s;
+            bestTime = h.time;
+            bestHour = h;
+          }
+          // Askelväli vaihtelee (met.no harvenee 6 h välein), joten
+          // lasketaan oikeita tunteja eikä ennusteaskelia.
+          const next = hours[i + 1];
+          const stepH = next
+            ? Math.min(6, (new Date(next.time) - new Date(h.time)) / 3600000)
+            : 1;
+          if (s >= SURFABLE_SCORE) surfableHours += stepH;
+          scoreSeries.push({ time: h.time, score: s });
+        });
+        surfableHours = Math.round(surfableHours);
+        spotMatrix.set(props.name, {
+          series: scoreSeries,
+          bestDir: bestDirs,
+        });
+        const bestWhen = bestTime
+          ? new Date(bestTime).toLocaleString("fi-FI", {
+              timeZone: "Europe/Helsinki",
+              weekday: "short",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "";
+
+        const gmapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${latlng.lat},${latlng.lng}`;
+        const windyUrl = `https://www.windy.com/${latlng.lat}/${latlng.lng}/wind?${latlng.lat},${latlng.lng},13`;
+        const applemapsUrl = `https://maps.apple.com/?ll=${latlng.lat},${latlng.lng}`;
+        let mapsUrl = "";
+        if (isAppleDevice()) {
+          mapsUrl = applemapsUrl;
+        } else {
+          mapsUrl = gmapsUrl;
+        }
+
+        marker.setIcon(createScoreIcon(bestScore, surfableHours));
+        const table = buildForecastTable(hours, bestDirs);
+        const compass = buildWindCompass(bestDirs, dir);
+
+        // Yksimielisyystila: kerro miten hyvin mallit ovat samaa mieltä parhaasta
+        // hetkestä. Sekä merkki että mallikohtaiset lukemat koskevat samaa
+        // tuntia (bestHour), jotta ±hajonta ja luvut vastaavat toisiaan.
+        const bestConf = bestHour ? confidenceOf(bestHour) : null;
+        const confRow = bestConf
+          ? `<div class="conf-badge conf-${bestConf.level}">${bestConf.icon} ${
+              bestConf.label
+            } (±${bestConf.spread.toFixed(1)} m/s${
+              // Harmonie loppuu ~66 h kohdalla -> kerro jos kaikki mallit
+              // eivät enää yllä tähän hetkeen
+              bestConf.n < forecast.models.length
+                ? `, ${bestConf.n}/${forecast.models.length} mallia`
+                : ""
+            })</div>`
+          : "";
+        const memberRow =
+          bestHour && bestHour.members && bestHour.members.length > 1
+            ? `<div class="conf-members">Silloin: ${bestHour.members
+                .map((m) => `${m.model} ${m.wind.toFixed(1)}`)
+                .join(" · ")} m/s</div>`
+            : "";
+
+        marker.bindPopup(
+          `
                                   <div class="popup-tabs">
         <div class="tab-buttons">
           <button id="tabInfoBtn" class="active">
             <span class="tab-btn-emoji">🌬️</span> Sää &amp; arvio
           </button>
-          <button id="tabMoreBtn" data-file="${feature.properties.information}">
+          <button id="tabMoreBtn" data-file="${props.information || ""}">
             <span class="tab-btn-emoji">📝</span> Paikan kuvaus
           </button>
         </div>
         <div id="tabInfo" class="tab-content active">
-              <b>${feature.properties.name}</b><br><hr>
+              <b>${props.name}</b><br><hr>
               <div class="compass-wrap">
                 ${compass}
                 <div class="compass-info">
@@ -1277,6 +1703,8 @@
                         : ""
                     }</span>
                   </div>
+                  ${confRow}
+                  ${memberRow}
                   <div class="surf-now">
                     Nyt: <b style="color:${scoreColor(
                       score,
@@ -1291,19 +1719,30 @@
                     )}°
                   </div>
                   <div class="compass-best">
-                    Paras tuuli: ${feature.properties.best_wind_dir[0]}°–${
-                      feature.properties.best_wind_dir[1]
-                    }°${
-                      typeof feature.properties.best_wind_dir[2] !== "undefined"
-                        ? ` & ${feature.properties.best_wind_dir[2]}°–${feature.properties.best_wind_dir[3]}°`
-                        : ""
+                    ${
+                      bestDirs
+                        ? `Paras tuuli: ${bestDirs[0]}°–${bestDirs[1]}°${
+                            typeof bestDirs[2] !== "undefined"
+                              ? ` & ${bestDirs[2]}°–${bestDirs[3]}°`
+                              : ""
+                          }`
+                        : "Paras tuulensuunta ei tiedossa"
                     }
                   </div>
                 </div>
               </div>
               Current wind: ${wind.toFixed(1)} m/s (${Math.round(dir)}°)<br>
-              Current temperature: ${temperature.toFixed(1)} °C<br>
-              Notes: ${feature.properties.notes}<br>
+              ${
+                Number.isFinite(temperature)
+                  ? `Current temperature: ${temperature.toFixed(1)} °C<br>`
+                  : ""
+              }
+              ${props.notes ? `Notes: ${props.notes}<br>` : ""}
+              <div class="popup-source">Lähde: ${srcLabel}${
+                forecast.models.length > 1
+                  ? ` (${forecast.models.join(", ")})`
+                  : ""
+              }</div>
 
               <div class="ss-scroll" style="height:300px;overflow:auto;">${table}</div>
                   </div>
@@ -1317,62 +1756,57 @@
         <button id="popupCloseBtn" class="popup-close-fs">✕ Sulje</button>
       </div>
               `,
-                {
-                  // On mobile the popup is full-screen, so panning the map to
-                  // "fit" it only scrolls spots away — keep the map still.
-                  autoPan: !window.matchMedia("(max-width: 600px)").matches,
-                },
-              );
-
-              marker.on("popupopen", (e) => {
-                // On mobile, lift the popup out of the transformed map pane so
-                // the full-screen CSS (position:fixed) anchors to the viewport.
-                if (window.matchMedia("(max-width: 600px)").matches) {
-                  const el = e.popup.getElement();
-                  if (el) document.body.appendChild(el);
-                }
-
-                const closeBtn = document.getElementById("popupCloseBtn");
-                if (closeBtn)
-                  closeBtn.addEventListener("click", () =>
-                    marker.closePopup(),
-                  );
-
-                const tabInfoBtn = document.getElementById("tabInfoBtn");
-                const tabMoreBtn = document.getElementById("tabMoreBtn");
-                const tabInfo = document.getElementById("tabInfo");
-                const tabMore = document.getElementById("tabMore");
-                const mdContainer = document.getElementById("markdownContent");
-
-                function activate(tab) {
-                  tabInfo.classList.toggle("active", tab === "info");
-                  tabMore.classList.toggle("active", tab === "more");
-                  tabInfoBtn.classList.toggle("active", tab === "info");
-                  tabMoreBtn.classList.toggle("active", tab === "more");
-                  if (tab === "more") {
-                    // lazy-load markdown when opening tab
-                    if (!mdContainer.dataset.loaded) {
-                      const file = tabMoreBtn.dataset.file;
-                      fetch(file)
-                        .then((res) => res.text())
-                        .then((md) => {
-                          mdContainer.innerHTML = marked.parse(md);
-                          mdContainer.dataset.loaded = "true";
-                        })
-                        .catch((err) => {
-                          mdContainer.innerHTML = `<p style="color:red">Error: ${err}</p>`;
-                        });
-                    }
-                  }
-                }
-
-                tabInfoBtn.addEventListener("click", () => activate("info"));
-                tabMoreBtn.addEventListener("click", () => activate("more"));
-              });
-            });
-            return marker;
+          {
+            // On mobile the popup is full-screen, so panning the map to
+            // "fit" it only scrolls spots away — keep the map still.
+            autoPan: !window.matchMedia("(max-width: 600px)").matches,
           },
-        }).addTo(map);
+        );
+
+        marker.on("popupopen", (e) => {
+          // On mobile, lift the popup out of the transformed map pane so
+          // the full-screen CSS (position:fixed) anchors to the viewport.
+          if (window.matchMedia("(max-width: 600px)").matches) {
+            const el = e.popup.getElement();
+            if (el) document.body.appendChild(el);
+          }
+
+          const closeBtn = document.getElementById("popupCloseBtn");
+          if (closeBtn)
+            closeBtn.addEventListener("click", () => marker.closePopup());
+
+          const tabInfoBtn = document.getElementById("tabInfoBtn");
+          const tabMoreBtn = document.getElementById("tabMoreBtn");
+          const tabInfo = document.getElementById("tabInfo");
+          const tabMore = document.getElementById("tabMore");
+          const mdContainer = document.getElementById("markdownContent");
+
+          function activate(tab) {
+            tabInfo.classList.toggle("active", tab === "info");
+            tabMore.classList.toggle("active", tab === "more");
+            tabInfoBtn.classList.toggle("active", tab === "info");
+            tabMoreBtn.classList.toggle("active", tab === "more");
+            if (tab === "more") {
+              // lazy-load markdown when opening tab
+              if (!mdContainer.dataset.loaded) {
+                const file = tabMoreBtn.dataset.file;
+                fetch(file)
+                  .then((res) => res.text())
+                  .then((md) => {
+                    mdContainer.innerHTML = marked.parse(md);
+                    mdContainer.dataset.loaded = "true";
+                  })
+                  .catch((err) => {
+                    mdContainer.innerHTML = `<p style="color:red">Error: ${err}</p>`;
+                  });
+              }
+            }
+          }
+
+          tabInfoBtn.addEventListener("click", () => activate("info"));
+          tabMoreBtn.addEventListener("click", () => activate("more"));
+        });
+        return marker;
       }
 
       // Lataa spotit ja käynnistä
@@ -1502,7 +1936,8 @@
               .map((c) => {
                 const s = r.m.get(c.t);
                 const ds = c.isNew ? " day-start" : "";
-                if (typeof s !== "number") return `<td class="${ds.trim()}"></td>`;
+                if (typeof s !== "number")
+                  return `<td class="${ds.trim()}"></td>`;
                 return `<td class="cell${ds}" style="background:${scoreColor(
                   s,
                 )}">${s}</td>`;
@@ -1568,7 +2003,9 @@
       })();
 
       // TEE GLOBAALIKSI surfseeker.js:lle (TÄRKEÄ: tämän pitää olla script-tagissa)
-      window.surfApp = { map, refreshSpots };
+      // onStatus: surfseeker.js asettaa tähän funktion, jolla paneeliin
+      // näytetään ennustelähteen tilaviesti (esim. varalähteelle putoaminen).
+      window.surfApp = { map, refreshSpots, onStatus: null };
     </script>
 
     <!-- Surfseeker UI (ei module, koska tiedosto käyttää window.surfAppia) -->
