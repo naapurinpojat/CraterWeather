@@ -62,6 +62,14 @@ To add a spot: define geometry in geojson.io, append the feature to `spots.geojs
 - **Map markers show the _best_ score across the whole forecast** (`createScoreIcon`), so the map answers "is good weather coming here?" at a glance. The popup shows that best score + when, plus the current score, the optimal-direction compass, and a per-hour score column in the table.
 - When changing scoring, edit `surfabilityScore`/`hourScore`/`scoreColor` in `index.html`; the table, compass, marker, and info badge all consume them, so they stay consistent automatically.
 
+### Score matrix (`#matrixModal`)
+
+Heatmap of every spot (rows, sorted by `sectorMid` of `best_wind_dir`) against every forecast time (columns), `MATRIX_HORIZON_H = 72` hours ahead. Fed by `spotMatrix`, a `Map<spotName, { series, bestDir }>` filled in `buildSpotMarker` and cleared on every `refreshSpots()`.
+
+- A `series` entry is `{ time, score, conf, spread, models }` — `conf`/`spread`/`models` are `null` outside consensus mode. `computeMatrix()` keys cells by the **whole entry**, not just the score, so anything on it can be rendered.
+- Cells get `mx-mid`/`mx-low` hatching when models disagree, but **only above `MATRIX_CONF_MIN_SCORE` (40)** — hatching gray 0-point hours is pure noise. The legend (`#matrixLegend`) renders only when `matrix.hasConf`.
+- Cells set `background-color` inline, **not** `background` — the shorthand would wipe out the hatching `background-image` coming from the CSS class.
+
 ### Map projection
 
 The map uses Finland's national CRS **EPSG:3067** (TM35FIN) via Proj4Leaflet, with MML (Maanmittauslaitos) base tiles. Coordinates in `spots.geojson` are plain WGS84 lon/lat; Leaflet handles the projection. The basemap is dimmed with a `filter: brightness(...)` on `.leaflet-tile-pane` only, so markers/popups/controls stay full-brightness.

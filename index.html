@@ -789,6 +789,58 @@
         text-shadow: 0 0 2px rgba(0, 0, 0, 0.35);
       }
 
+      /* Yksimielisyystila: viivoitus = mallit eri mieltä tästä tunnista.
+         Solun väri (pisteet) tulee inline background-colorina, viivoitus
+         background-imagena sen päälle. */
+      table.matrix td.cell.mx-mid {
+        background-image: repeating-linear-gradient(
+          45deg,
+          rgba(255, 255, 255, 0.28) 0 2px,
+          transparent 2px 5px
+        );
+      }
+      table.matrix td.cell.mx-low {
+        background-image: repeating-linear-gradient(
+          45deg,
+          rgba(255, 255, 255, 0.5) 0 3px,
+          transparent 3px 6px
+        );
+        color: rgba(255, 255, 255, 0.85);
+      }
+
+      .matrix-legend {
+        padding: 0 14px 8px;
+        font-family: "Tahoma", sans-serif;
+        font-size: 11px;
+        color: #6e571a;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex: 0 0 auto;
+      }
+      .matrix-legend .mx-swatch {
+        display: inline-block;
+        width: 16px;
+        height: 12px;
+        border-radius: 2px;
+        background-color: #84cc16;
+        vertical-align: -2px;
+      }
+      .matrix-legend .mx-swatch.mid {
+        background-image: repeating-linear-gradient(
+          45deg,
+          rgba(255, 255, 255, 0.28) 0 2px,
+          transparent 2px 5px
+        );
+      }
+      .matrix-legend .mx-swatch.low {
+        background-image: repeating-linear-gradient(
+          45deg,
+          rgba(255, 255, 255, 0.5) 0 3px,
+          transparent 3px 6px
+        );
+      }
+
       /* Mobiilissa matriisi koko ruudun kokoiseksi, vaaka-/pystyvieritys */
       @media (max-width: 600px) {
         #matrixModal {
@@ -854,6 +906,7 @@
           <button id="matrixClose" type="button" aria-label="Sulje">✖</button>
         </div>
         <div class="matrix-days" id="matrixDays"></div>
+        <div class="matrix-legend" id="matrixLegend"></div>
         <div class="matrix-scroll ss-scroll" id="matrixScroll"></div>
       </div>
     </div>
@@ -1095,7 +1148,20 @@
           `${OM_URL}?latitude=${lat}&longitude=${lon}&hourly=${OM_VARS}` +
           `&wind_speed_unit=ms&timezone=UTC&forecast_days=${days}` +
           `&cell_selection=sea&models=${models.join(",")}`;
-        const res = await axios.get(url);
+
+        // Open-Meteo vastaa ajoittain 503:lla hetkellisen kuorman takia.
+        // Yksi uusintayritys riittää yleensä — vasta sen jälkeen pudotaan
+        // varalähteeseen, ettei hetkellinen piikki vie yksimielisyysnäkymää.
+        let res;
+        try {
+          res = await axios.get(url);
+        } catch (err) {
+          const status = err.response && err.response.status;
+          if (status && status < 500) throw err;
+          await new Promise((r) => setTimeout(r, 800));
+          res = await axios.get(url);
+        }
+
         const list = Array.isArray(res.data) ? res.data : [res.data];
         if (list.length !== points.length)
           throw new Error("Open-Meteo palautti väärän määrän paikkoja");
@@ -1625,7 +1691,17 @@
             ? Math.min(6, (new Date(next.time) - new Date(h.time)) / 3600000)
             : 1;
           if (s >= SURFABLE_SCORE) surfableHours += stepH;
-          scoreSeries.push({ time: h.time, score: s });
+          // conf/spread kulkevat matriisiin asti, jotta heatmapista näkee
+          // myös kuinka luotettava kukin solu on (null muilla kuin
+          // yksimielisyystilalla).
+          const c = confidenceOf(h);
+          scoreSeries.push({
+            time: h.time,
+            score: s,
+            conf: c ? c.level : null,
+            spread: c ? c.spread : null,
+            models: c ? c.n : null,
+          });
         });
         surfableHours = Math.round(surfableHours);
         spotMatrix.set(props.name, {
@@ -1822,6 +1898,9 @@
       // Rivit = paikat (tuulensuunnan mukaan), sarakkeet = ajat,
       // solu = surfabilityScore. Näytetään ~72 h eteenpäin.
       const MATRIX_HORIZON_H = 72;
+      // Alle tämän jäävät (harmaat) tunnit jätetään viivoittamatta, jotta
+      // yksimielisyysmerkintä näkyy vain siellä missä sillä on merkitystä.
+      const MATRIX_CONF_MIN_SCORE = 40;
       let matrixSelectedDay = null; // null = kaikki päivät
 
       // Kokoa matriisin data (rivit + sarakemeta) kerätyistä pisteistä.
@@ -1872,15 +1951,21 @@
           if (b < a) b += 360;
           return ((a + b) / 2) % 360;
         };
+        // Solun arvo on koko piste (score + yksimielisyys), ei pelkkä luku
         const rows = spots
           .map(([name, data]) => {
-            const m = new Map(data.series.map((p) => [p.time, p.score]));
+            const m = new Map(data.series.map((p) => [p.time, p]));
             const max = data.series.reduce((mx, p) => Math.max(mx, p.score), 0);
             return { name, m, max, dir: sectorMid(data.bestDir) };
           })
           .sort((a, b) => a.dir - b.dir || b.max - a.max);
 
-        return { meta, rows };
+        // Onko yksimielisyystila päällä -> näytetään matriisin selite
+        const hasConf = spots.some(([, d]) =>
+          d.series.some((p) => p.conf !== null && p.conf !== undefined),
+        );
+
+        return { meta, rows, hasConf };
       }
 
       // Päivävalitsin: nappi per päivä + montako >=70 pistettä (kaikki paikat).
@@ -1895,8 +1980,8 @@
         });
         matrix.rows.forEach((r) => {
           matrix.meta.forEach((c) => {
-            const s = r.m.get(c.t);
-            if (typeof s === "number" && s >= SURFABLE_SCORE) counts[c.day]++;
+            const p = r.m.get(c.t);
+            if (p && p.score >= SURFABLE_SCORE) counts[c.day]++;
           });
         });
         const totalAll = days.reduce((sum, d) => sum + counts[d], 0);
@@ -1934,13 +2019,27 @@
           .map((r) => {
             const cells = meta
               .map((c) => {
-                const s = r.m.get(c.t);
+                const p = r.m.get(c.t);
                 const ds = c.isNew ? " day-start" : "";
-                if (typeof s !== "number")
-                  return `<td class="${ds.trim()}"></td>`;
-                return `<td class="cell${ds}" style="background:${scoreColor(
-                  s,
-                )}">${s}</td>`;
+                if (!p) return `<td class="${ds.trim()}"></td>`;
+                // Yksimielisyystilassa viivoitus kertoo mallien hajonnasta:
+                // mitä epävarmempi tunti, sitä voimakkaampi viivoitus.
+                // Vain kiinnostavat tunnit viivoitetaan — erimielisyys
+                // harmaasta nollatunnista ei muuta kenenkään suunnitelmia.
+                const cs =
+                  p.conf && p.conf !== "ok" && p.score >= MATRIX_CONF_MIN_SCORE
+                    ? ` mx-${p.conf}`
+                    : "";
+                const title = p.conf
+                  ? ` title="${r.name} — ${p.score} p., ${
+                      p.models
+                    } mallia, tuuliero ±${p.spread.toFixed(1)} m/s"`
+                  : "";
+                // background-color (ei background), jotta luokan viivoitus
+                // (background-image) ei ylikirjoitu inline-tyylillä
+                return `<td class="cell${ds}${cs}" style="background-color:${scoreColor(
+                  p.score,
+                )}"${title}>${p.score}</td>`;
               })
               .join("");
             return `<tr><td class="spot-c" title="${r.name}">${r.name}</td>${cells}</tr>`;
@@ -1953,12 +2052,21 @@
       function renderMatrix() {
         const daysEl = document.getElementById("matrixDays");
         const scroll = document.getElementById("matrixScroll");
+        const legendEl = document.getElementById("matrixLegend");
         const matrix = computeMatrix();
         if (!matrix) {
           daysEl.innerHTML = "";
+          legendEl.innerHTML = "";
           scroll.innerHTML = `<div class="matrix-empty">Ei vielä dataa — odota hetki, että ennusteet latautuvat, ja avaa uudelleen.</div>`;
           return;
         }
+        // Selite näkyy vain yksimielisyystilassa, jossa viivoitus on käytössä
+        legendEl.innerHTML = matrix.hasConf
+          ? `Viivoitus = mallit eri mieltä:
+             <span class="mx-swatch"></span> yksimieliset
+             <span class="mx-swatch mid"></span> hajontaa
+             <span class="mx-swatch low"></span> epävarma`
+          : "";
         // Jos aiemmin valittu päivä ei enää löydy datasta, palaa "Kaikki"
         if (
           matrixSelectedDay &&

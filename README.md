@@ -25,6 +25,7 @@
   - a **forecast table** covering the whole forecast period, with wind/gust bars, per-hour score and the wind direction.
 - **Sport selector** — windsurf, kitesurf, kitefoil and wingfoil, each with its own wind thresholds (your choice is remembered).
 - **Forecast model selector** — Yr (met.no), ECMWF, Harmonie 2 km, or **Yksimielisyys** (consensus), which scores all three models and shows how much they agree (see below).
+- **Score matrix** (📊 Pistematriisi) — every spot as a row, every forecast hour as a column, one heatmap that answers "where and when, anywhere, in the next 72 h?". Spots are ordered by their optimal wind direction so places that light up together sit next to each other, and a per-day filter counts the surfable hours. In consensus mode cells are **hatched where the models disagree**.
 - **No-surf / hazard zones** drawn on the map (shallows, rocks, etc.).
 - **Quick navigation** links to Google/Apple Maps and Windy for each spot.
 - **Installable as an app** on Android and iOS — see below.
@@ -53,7 +54,10 @@ A single model four days out is a coin flip, so the panel lets you pick the sour
 In consensus mode every model is scored **separately** and the median is taken, so disagreement about
 _direction_ counts as well as speed. The popup shows how far apart the models are for the best hour —
 ✔ _Mallit yksimielisiä_ (≤1.5 m/s), ≈ _Jonkin verran hajontaa_ (≤3 m/s) or ⚠ _Epävarma_ — plus each
-model's own wind reading. Score pills in the forecast table fade as agreement drops.
+model's own wind reading. Score pills in the forecast table fade as agreement drops, and matrix cells
+are hatched — lightly for "some spread", heavily for "uncertain". Hatching is applied only from 40
+points up, so disagreement about hours nobody would surf anyway stays out of the way; hover a cell
+for the model count and the exact spread.
 
 Open-Meteo fetches every spot and every model in a **single** request. If it is unreachable the app
 falls back to Yr and says so in the panel.
