@@ -1,0 +1,1 @@
+# Kalajärven uimaranta

@@ -13,8 +13,8 @@ RUN bun install || true
 # Kopioidaan lähdekoodi
 COPY . .
 
-# Expondoidaan portti (Vite / Bun dev server käyttää oletuksena 5173)
-EXPOSE 5173
+# Expondoidaan portti (server.ts kuuntelee porttia 3333)
+EXPOSE 3333
 
 # Käynnistetään dev-server
 CMD ["bun", "run", "dev", "--host", "0.0.0.0"]

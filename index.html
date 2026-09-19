@@ -328,9 +328,19 @@
         border: 1px solid #16a34a;
       }
 
+      .compass-legend .legend-dot.lane {
+        background: #facc15;
+      }
+
       .compass-legend .legend-dot.needle {
         border-radius: 50%;
         background: #1f2937;
+      }
+
+      .spot-notes {
+        margin-top: 2px;
+        font-size: 0.9em;
+        color: #4b5563;
       }
 
       .compass-best {
@@ -485,6 +495,20 @@
 
       .tab-content.active {
         display: block;
+      }
+
+      /* 3D-spottinäkymä (spot3d.js) */
+      .view3d {
+        width: 100%;
+        min-width: 300px;
+        height: 380px;
+        border-radius: 6px;
+        overflow: hidden;
+        touch-action: none;
+      }
+
+      #view3dHour {
+        width: 100%;
       }
 
       .spot-label {
@@ -860,6 +884,15 @@
         }
       }
     </style>
+    <!-- three.js vain 3D-spottinäkymälle (spot3d.js), ladataan laiskasti -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+        }
+      }
+    </script>
   </head>
 
   <body>
@@ -1139,6 +1172,20 @@
       }
 
       // --- Open-Meteo ----------------------------------------------------
+      // Open-Meteo vastaa ajoittain 503:lla hetkellisen kuorman takia.
+      // Yksi uusintayritys riittää yleensä — vasta sen jälkeen pudotaan
+      // varalähteeseen, ettei hetkellinen piikki vie yksimielisyysnäkymää.
+      async function omGet(url) {
+        try {
+          return await axios.get(url);
+        } catch (err) {
+          const status = err.response && err.response.status;
+          if (status && status < 500) throw err;
+          await new Promise((r) => setTimeout(r, 800));
+          return axios.get(url);
+        }
+      }
+
       // Yksi pyyntö hakee kaikki paikat JA kaikki mallit kerralla: paikat
       // pilkulla eroteltuina, vastaus taulukkona samassa järjestyksessä.
       async function fetchOpenMeteo(points, models, days) {
@@ -1149,19 +1196,7 @@
           `&wind_speed_unit=ms&timezone=UTC&forecast_days=${days}` +
           `&cell_selection=sea&models=${models.join(",")}`;
 
-        // Open-Meteo vastaa ajoittain 503:lla hetkellisen kuorman takia.
-        // Yksi uusintayritys riittää yleensä — vasta sen jälkeen pudotaan
-        // varalähteeseen, ettei hetkellinen piikki vie yksimielisyysnäkymää.
-        let res;
-        try {
-          res = await axios.get(url);
-        } catch (err) {
-          const status = err.response && err.response.status;
-          if (status && status < 500) throw err;
-          await new Promise((r) => setTimeout(r, 800));
-          res = await axios.get(url);
-        }
-
+        const res = await omGet(url);
         const list = Array.isArray(res.data) ? res.data : [res.data];
         if (list.length !== points.length)
           throw new Error("Open-Meteo palautti väärän määrän paikkoja");
@@ -1262,15 +1297,25 @@
         }
       }
 
-      // Onko tuulen suunta spotin parhaalla sektorilla (tukee 1 tai 2 sektoria)
+      // best_wind_dir [a1,b1,a2,b2,...] -> [[a1,b1],[a2,b2],...] (N sektoria)
+      function sectorsOf(bestDirs) {
+        const out = [];
+        for (let i = 0; bestDirs && i + 1 < bestDirs.length; i += 2)
+          out.push([bestDirs[i], bestDirs[i + 1]]);
+        return out;
+      }
+
+      // Onko tuulen suunta jollain spotin parhaista sektoreista
       function dirInBest(dir, bestDirs) {
-        if (!bestDirs) return false;
-        const inA = dir >= bestDirs[0] && dir <= bestDirs[1];
-        const inB =
-          typeof bestDirs[2] !== "undefined" &&
-          dir >= bestDirs[2] &&
-          dir <= bestDirs[3];
-        return inA || inB;
+        return sectorsOf(bestDirs).some(
+          ([a, b]) => angDistToSector(dir, a, b) === 0,
+        );
+      }
+
+      // Asteet -> ilmansuunta (8 pääsuuntaa)
+      function dirToCompass(deg) {
+        const n = ["P", "KO", "I", "KA", "E", "LO", "L", "LU"];
+        return n[Math.round((((deg % 360) + 360) % 360) / 45) % 8];
       }
 
       // Lajin raja-arvot. surfseeker.js asettaa window.SURF_THRESHOLDS
@@ -1307,9 +1352,8 @@
           const margin = 45;
           const ev = (a, b) =>
             Math.max(0, 1 - angDistToSector(dir, a, b) / margin);
-          dScore = ev(bestDirs[0], bestDirs[1]);
-          if (typeof bestDirs[2] !== "undefined")
-            dScore = Math.max(dScore, ev(bestDirs[2], bestDirs[3]));
+          for (const [a, b] of sectorsOf(bestDirs))
+            dScore = Math.max(dScore, ev(a, b));
         }
 
         // 2) Nopeus: nousu hyvälle kaistalle, huippu lähellä "erittäin hyvä",
@@ -1522,17 +1566,11 @@
         };
 
         let sectors = "";
-        if (bestDirs) {
+        for (const [a, b] of sectorsOf(bestDirs)) {
           sectors += `<path d="${wedge(
-            bestDirs[0],
-            bestDirs[1],
+            a,
+            b,
           )}" fill="#22c55e" fill-opacity="0.35" stroke="#16a34a" stroke-width="1"/>`;
-          if (typeof bestDirs[2] !== "undefined") {
-            sectors += `<path d="${wedge(
-              bestDirs[2],
-              bestDirs[3],
-            )}" fill="#22c55e" fill-opacity="0.35" stroke="#16a34a" stroke-width="1"/>`;
-          }
         }
 
         // Nykyinen tuuli (mistä tuulee) -neula
@@ -1643,6 +1681,40 @@
             );
           },
         }).addTo(map);
+      }
+
+      // spot3d.js:n parametrit: spotti TM35FIN-metreinä + lähialueen
+      // vaara-alueet paikallisina metreinä (x itään, y pohjoiseen).
+      function spot3dOptions(latlng, hours, bestDirs) {
+        const c = crs.projection.project(latlng);
+        const local = ([lon, lat]) => {
+          const p = crs.projection.project(L.latLng(lat, lon));
+          return [p.x - c.x, p.y - c.y];
+        };
+        const hazards = [];
+        (spotData ? spotData.features : []).forEach((f) => {
+          const g = f.geometry;
+          const polys =
+            g.type === "Polygon"
+              ? [g.coordinates]
+              : g.type === "MultiPolygon"
+                ? g.coordinates
+                : [];
+          polys.forEach((poly) => {
+            const ring = poly[0].map(local);
+            // Vain 3 km näkymään osuvat
+            if (ring.some(([x, y]) => Math.abs(x) < 1500 && Math.abs(y) < 1500))
+              hazards.push(ring);
+          });
+        });
+        return {
+          E: c.x,
+          N: c.y,
+          hours,
+          sectors: sectorsOf(bestDirs),
+          hazards,
+          colors: window.surfApp.wind.colors,
+        };
       }
 
       // Yksi spotti-marker valmiista, normalisoidusta ennusteesta.
@@ -1763,9 +1835,26 @@
           <button id="tabMoreBtn" data-file="${props.information || ""}">
             <span class="tab-btn-emoji">📝</span> Paikan kuvaus
           </button>
+          <button id="tab3dBtn">
+            <span class="tab-btn-emoji">🗺️</span> 3D
+          </button>
+        </div>
+        <div id="tab3d" class="tab-content">
+          <div id="view3d" class="view3d"></div>
+          <input type="range" id="view3dHour" min="0" max="${
+            hours.length - 1
+          }" value="0" />
+          <div id="view3dLabel"></div>
+          <div class="compass-legend">
+            <span class="legend-dot lane"></span> Ennustettu ajolinja (sivutuuli)
+          </div>
         </div>
         <div id="tabInfo" class="tab-content active">
-              <b>${props.name}</b><br><hr>
+              <b>${props.name}</b>${
+                props.notes
+                  ? `<div class="spot-notes">${props.notes}</div>`
+                  : ""
+              }<hr>
               <div class="compass-wrap">
                 ${compass}
                 <div class="compass-info">
@@ -1797,11 +1886,12 @@
                   <div class="compass-best">
                     ${
                       bestDirs
-                        ? `Paras tuuli: ${bestDirs[0]}°–${bestDirs[1]}°${
-                            typeof bestDirs[2] !== "undefined"
-                              ? ` & ${bestDirs[2]}°–${bestDirs[3]}°`
-                              : ""
-                          }`
+                        ? `Paras tuuli: ${sectorsOf(bestDirs)
+                            .map(
+                              ([a, b]) =>
+                                `${dirToCompass(a)}–${dirToCompass(b)} (${a}°–${b}°)`,
+                            )
+                            .join(" & ")}`
                         : "Paras tuulensuunta ei tiedossa"
                     }
                   </div>
@@ -1856,18 +1946,34 @@
           const tabInfo = document.getElementById("tabInfo");
           const tabMore = document.getElementById("tabMore");
           const mdContainer = document.getElementById("markdownContent");
+          const tab3dBtn = document.getElementById("tab3dBtn");
+          const tab3d = document.getElementById("tab3d");
 
           function activate(tab) {
             tabInfo.classList.toggle("active", tab === "info");
             tabMore.classList.toggle("active", tab === "more");
+            tab3d.classList.toggle("active", tab === "3d");
             tabInfoBtn.classList.toggle("active", tab === "info");
             tabMoreBtn.classList.toggle("active", tab === "more");
+            tab3dBtn.classList.toggle("active", tab === "3d");
+            if (tab === "3d") open3d();
+            else if (view3d) view3d.pause();
             if (tab === "more") {
               // lazy-load markdown when opening tab
               if (!mdContainer.dataset.loaded) {
                 const file = tabMoreBtn.dataset.file;
+                // Ei kuvaustiedostoa -> fetch("") hakisi index.html:n itsensä
+                if (!file) {
+                  mdContainer.textContent = "Kuvausta ei ole vielä lisätty.";
+                  mdContainer.dataset.loaded = "true";
+                  return;
+                }
                 fetch(file)
-                  .then((res) => res.text())
+                  .then((res) => {
+                    // fetch ei hylkää 404:ää -> muuten 404-sivu näkyisi kuvauksena
+                    if (!res.ok) throw new Error(`${file} (${res.status})`);
+                    return res.text();
+                  })
                   .then((md) => {
                     mdContainer.innerHTML = marked.parse(md);
                     mdContainer.dataset.loaded = "true";
@@ -1881,6 +1987,57 @@
 
           tabInfoBtn.addEventListener("click", () => activate("info"));
           tabMoreBtn.addEventListener("click", () => activate("more"));
+          tab3dBtn.addEventListener("click", () => activate("3d"));
+
+          // 3D-näkymä: three.js + spot3d.js ladataan vasta ensiavauksella
+          const slider = document.getElementById("view3dHour");
+          const label = document.getElementById("view3dLabel");
+          function show3dHour() {
+            const h = hours[+slider.value];
+            const when = new Date(h.time).toLocaleString("fi-FI", {
+              timeZone: "Europe/Helsinki",
+              weekday: "short",
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+            const gust = h.gust != null ? ` (${h.gust.toFixed(1)})` : "";
+            label.textContent = `${when} · ${h.wind.toFixed(1)}${gust} m/s · ${Math.round(h.dir)}°`;
+            if (view3d) view3d.setHour(+slider.value);
+          }
+          slider.addEventListener("input", show3dHour);
+          show3dHour();
+
+          async function open3d() {
+            if (view3d) return view3d.resume();
+            if (loading3d) return;
+            loading3d = true;
+            const el = document.getElementById("view3d");
+            el.textContent = "Ladataan 3D-näkymää…";
+            try {
+              const { mount } = await import("./spot3d.js");
+              el.textContent = "";
+              const view = await mount(
+                el,
+                spot3dOptions(latlng, hours, bestDirs),
+              );
+              // Popup ehti sulkeutua latauksen aikana -> siivotaan heti
+              if (!marker.isPopupOpen()) return view.dispose();
+              view3d = view;
+              view3d.setHour(+slider.value);
+            } catch (err) {
+              console.error("3D-näkymä ei latautunut", err);
+              el.textContent = "3D-näkymä ei latautunut.";
+            } finally {
+              loading3d = false;
+            }
+          }
+        });
+        // Selaimet sallivat vain ~16 WebGL-kontekstia -> vapauta sulkiessa
+        let view3d = null;
+        let loading3d = false;
+        marker.on("popupclose", () => {
+          if (view3d) view3d.dispose();
+          view3d = null;
         });
         return marker;
       }
@@ -2110,10 +2267,294 @@
         });
       })();
 
+      // ------------------------------------------------------------------
+      // Tuulikerros: animoidut tuulipartikkelit kartan päällä.
+      // Oma canvas, koska leaflet-velocity olettaa Web Mercatorin eikä
+      // toimi EPSG:3067-kartalla. Data: yksi Open-Meteo-pyyntö GRID_N×GRID_N
+      // -hilasta näkymän (+50 %) yli; haetaan uudestaan vain kun näkymä
+      // karkaa hilan ulkopuolelle, zoomataan reilusti sisään tai malli vaihtuu.
+      // ------------------------------------------------------------------
+      const wind = (() => {
+        const GRID_N = 12;
+        const HOURS = 72;
+        const CELL = 20; // näyttöhilan väli (px), tuuli haetaan tästä
+        const MAX_AGE = 80; // partikkelin elinikä (ruutuja)
+        const K = 0.25; // px / ruutu / (m/s)
+        // Nopeus (m/s) -> väri; samaa henkeä kuin scoreColor
+        const COLORS = [
+          [0, "#94a3b8"],
+          [3, "#60a5fa"],
+          [5, "#22c55e"],
+          [7, "#a3e635"],
+          [10, "#f59e0b"],
+          [14, "#ef4444"],
+        ];
+
+        const pane = map.createPane("windPane");
+        pane.style.zIndex = 450; // laattojen/alueiden yllä, merkkien alla
+        pane.style.pointerEvents = "none";
+        const canvas = L.DomUtil.create("canvas", "", pane);
+        const ctx = canvas.getContext("2d");
+
+        let field = null; // { s, n, w, e, u[t], v[t], times, bounds, zoom, model }
+        let hour = 0;
+        let enabled = false;
+        let raf = 0;
+        let W = 0;
+        let H = 0;
+        let sg = null; // näyttöhila: [u, v] per CELL-ruutu, NaN = ei dataa
+        let sgW = 0;
+        let particles = [];
+        let fetchSeq = 0;
+        let debounce = 0;
+
+        const api = {
+          colors: COLORS,
+          onChange: null, // surfseeker.js: aikaleima/liukusäädin päivittyy
+          get times() {
+            return field ? field.times : [];
+          },
+          get hour() {
+            return hour;
+          },
+          setEnabled(on) {
+            enabled = !!on;
+            if (enabled) ensureField();
+            else stop();
+          },
+          setHour(i) {
+            hour = Math.max(0, i | 0);
+            if (enabled && field) buildScreenGrid();
+            if (api.onChange) api.onChange();
+          },
+          refresh() {
+            if (enabled) ensureField();
+          },
+        };
+
+        function omModel() {
+          const p = window.SURF_PROVIDER || DEFAULT_PROVIDER;
+          if (p.startsWith("om:")) return p.slice(3);
+          // Yksimielisyydelle ECMWF: kattaa koko 72 h (Harmonie ei)
+          if (p === "consensus") return "ecmwf_ifs025";
+          return "metno_seamless";
+        }
+
+        async function fetchGrid(bounds, model) {
+          const s = bounds.getSouth();
+          const n = bounds.getNorth();
+          const w = bounds.getWest();
+          const e = bounds.getEast();
+          const la = [];
+          const lo = [];
+          for (let j = 0; j < GRID_N; j++)
+            for (let i = 0; i < GRID_N; i++) {
+              la.push((s + ((n - s) * j) / (GRID_N - 1)).toFixed(3));
+              lo.push((w + ((e - w) * i) / (GRID_N - 1)).toFixed(3));
+            }
+          const url =
+            `${OM_URL}?latitude=${la.join(",")}&longitude=${lo.join(",")}` +
+            `&hourly=wind_speed_10m,wind_direction_10m&wind_speed_unit=ms` +
+            `&timezone=UTC&forecast_hours=${HOURS}&models=${model}`;
+          const res = await omGet(url);
+          const list = Array.isArray(res.data) ? res.data : [res.data];
+          const times = list[0].hourly.time.map((t) => t + "Z");
+          const u = times.map(() => new Float32Array(GRID_N * GRID_N));
+          const v = times.map(() => new Float32Array(GRID_N * GRID_N));
+          list.forEach((d, idx) => {
+            const sp = d.hourly.wind_speed_10m;
+            const dr = d.hourly.wind_direction_10m;
+            times.forEach((_, t) => {
+              // null = malli ei yllä tähän tuntiin (Harmonie > ~66 h)
+              if (sp[t] == null || dr[t] == null) return;
+              const r = (dr[t] * Math.PI) / 180;
+              // suunta on "mistä" -> vektori osoittaa "minne"
+              u[t][idx] = -sp[t] * Math.sin(r);
+              v[t][idx] = -sp[t] * Math.cos(r);
+            });
+          });
+          return {
+            s,
+            n,
+            w,
+            e,
+            u,
+            v,
+            times,
+            bounds,
+            zoom: map.getZoom(),
+            model,
+          };
+        }
+
+        // Bilineaarinen interpolointi lat/lon-hilassa -> [u, v] tai null
+        function windAt(lat, lon) {
+          const f = field;
+          const fx = ((lon - f.w) / (f.e - f.w)) * (GRID_N - 1);
+          const fy = ((lat - f.s) / (f.n - f.s)) * (GRID_N - 1);
+          if (!(fx >= 0 && fy >= 0 && fx <= GRID_N - 1 && fy <= GRID_N - 1))
+            return null;
+          const i = Math.min(GRID_N - 2, Math.floor(fx));
+          const j = Math.min(GRID_N - 2, Math.floor(fy));
+          const a = fx - i;
+          const b = fy - j;
+          const t = Math.min(hour, f.times.length - 1);
+          const lerp = (g) => {
+            const k = j * GRID_N + i;
+            return (
+              g[k] * (1 - a) * (1 - b) +
+              g[k + 1] * a * (1 - b) +
+              g[k + GRID_N] * (1 - a) * b +
+              g[k + GRID_N + 1] * a * b
+            );
+          };
+          return [lerp(f.u[t]), lerp(f.v[t])];
+        }
+
+        // Projektiomuunnos on kallis, joten näytön pisteet muunnetaan
+        // lat/loniksi kerran (liikkeen/tunnin vaihtuessa), ei joka ruudulla.
+        // ponytail: u/v käytetään suoraan näytön x/y:nä — TM35FIN:n
+        // karttapohjoinen poikkeaa todellisesta muutaman asteen Suomen
+        // reunoilla; käännä latLngToContainerPointin kautta jos se näkyy.
+        function buildScreenGrid() {
+          sgW = Math.ceil(W / CELL) + 1;
+          const sgH = Math.ceil(H / CELL) + 1;
+          sg = new Float32Array(sgW * sgH * 2);
+          for (let y = 0; y < sgH; y++)
+            for (let x = 0; x < sgW; x++) {
+              const ll = map.containerPointToLatLng([x * CELL, y * CELL]);
+              const uv = windAt(ll.lat, ll.lng);
+              const k = (y * sgW + x) * 2;
+              sg[k] = uv ? uv[0] : NaN;
+              sg[k + 1] = uv ? uv[1] : NaN;
+            }
+        }
+
+        function spawn(p) {
+          p.x = Math.random() * W;
+          p.y = Math.random() * H;
+          p.age = Math.floor(Math.random() * MAX_AGE);
+        }
+
+        function frame() {
+          raf = requestAnimationFrame(frame);
+          // Häivytä vanhat vanat hieman -> hännät. Ei liian lähelle 1:tä:
+          // 8-bittinen alfa pyöristyy eikä pienin jäänne katoa koskaan,
+          // jolloin kartan päälle jää pysyvä värisävy.
+          ctx.globalCompositeOperation = "destination-in";
+          ctx.fillStyle = "rgba(0,0,0,0.88)";
+          ctx.fillRect(0, 0, W, H);
+          ctx.globalCompositeOperation = "source-over";
+
+          const paths = COLORS.map(() => new Path2D());
+          for (const p of particles) {
+            const k =
+              (Math.round(p.y / CELL) * sgW + Math.round(p.x / CELL)) * 2;
+            const u = sg[k];
+            const v = sg[k + 1];
+            if (Number.isNaN(u) || ++p.age > MAX_AGE) {
+              spawn(p);
+              p.age = 0;
+              continue;
+            }
+            const nx = p.x + u * K;
+            const ny = p.y - v * K;
+            const speed = Math.hypot(u, v);
+            let c = 0;
+            while (c + 1 < COLORS.length && speed >= COLORS[c + 1][0]) c++;
+            paths[c].moveTo(p.x, p.y);
+            paths[c].lineTo(nx, ny);
+            p.x = nx;
+            p.y = ny;
+            if (nx < 0 || ny < 0 || nx > W || ny > H) spawn(p);
+          }
+          // Tumma reunus ensin, jotta vanat erottuvat kirjavasta pohjakartasta
+          ctx.lineCap = "round";
+          ctx.lineWidth = 3.5;
+          ctx.strokeStyle = "rgba(0,0,0,0.35)";
+          paths.forEach((path) => ctx.stroke(path));
+          ctx.lineWidth = 2;
+          paths.forEach((path, c) => {
+            ctx.strokeStyle = COLORS[c][1];
+            ctx.stroke(path);
+          });
+        }
+
+        function start() {
+          if (!enabled || !field || document.hidden) return;
+          stop();
+          const size = map.getSize();
+          const dpr = window.devicePixelRatio || 1;
+          W = size.x;
+          H = size.y;
+          canvas.width = W * dpr;
+          canvas.height = H * dpr;
+          canvas.style.width = W + "px";
+          canvas.style.height = H + "px";
+          // Pane liikkuu kartan mukana -> kohdista canvas näkymän kulmaan
+          L.DomUtil.setPosition(canvas, map.containerPointToLayerPoint([0, 0]));
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          buildScreenGrid();
+          const count = Math.min(2500, Math.round((W * H) / 900));
+          particles = Array.from({ length: count }, () => {
+            const p = {};
+            spawn(p);
+            return p;
+          });
+          frame();
+        }
+
+        function stop() {
+          cancelAnimationFrame(raf);
+          raf = 0;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        async function ensureField() {
+          const model = omModel();
+          const view = map.getBounds();
+          if (
+            field &&
+            field.model === model &&
+            field.bounds.contains(view) &&
+            map.getZoom() - field.zoom < 2
+          )
+            return start();
+          const seq = ++fetchSeq;
+          try {
+            const f = await fetchGrid(view.pad(0.5), model);
+            if (seq !== fetchSeq) return; // uudempi haku jo matkalla
+            field = f;
+            hour = Math.min(hour, f.times.length - 1);
+            if (api.onChange) api.onChange();
+            start();
+          } catch (err) {
+            console.error("Tuulikerroksen haku epäonnistui", err);
+            providerStatus("Tuulikerroksen haku epäonnistui.");
+          }
+        }
+
+        map.on("movestart zoomstart", () => {
+          if (enabled) stop();
+        });
+        map.on("moveend", () => {
+          if (!enabled) return;
+          start(); // vanhalla hilalla heti, uusi haku tarvittaessa perässä
+          clearTimeout(debounce);
+          debounce = setTimeout(ensureField, 600);
+        });
+        document.addEventListener("visibilitychange", () => {
+          if (document.hidden) stop();
+          else if (enabled) start();
+        });
+
+        return api;
+      })();
+
       // TEE GLOBAALIKSI surfseeker.js:lle (TÄRKEÄ: tämän pitää olla script-tagissa)
       // onStatus: surfseeker.js asettaa tähän funktion, jolla paneeliin
       // näytetään ennustelähteen tilaviesti (esim. varalähteelle putoaminen).
-      window.surfApp = { map, refreshSpots, onStatus: null };
+      window.surfApp = { map, refreshSpots, onStatus: null, wind };
     </script>
 
     <!-- Surfseeker UI (ei module, koska tiedosto käyttää window.surfAppia) -->

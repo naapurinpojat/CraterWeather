@@ -2,7 +2,7 @@ import { serve } from "bun";
 
 // Yksinkertainen staattisten tiedostojen serveri
 serve({
-  port: 3000,
+  port: 3333,
   async fetch(req) {
     const url = new URL(req.url);
     let path = url.pathname === "/" ? "/index.html" : url.pathname;
