@@ -85,9 +85,8 @@ export function surfabilityScore(
     const margin = 45;
     const ev = (a: number, b: number) =>
       Math.max(0, 1 - angDistToSector(dir, a, b) / margin);
-    dScore = ev(bestDirs[0], bestDirs[1]);
-    if (bestDirs.length >= 4)
-      dScore = Math.max(dScore, ev(bestDirs[2], bestDirs[3]));
+    for (let i = 0; i + 1 < bestDirs.length; i += 2)
+      dScore = Math.max(dScore, ev(bestDirs[i], bestDirs[i + 1]));
   }
 
   let sScore: number;

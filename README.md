@@ -93,7 +93,7 @@ To install dependencies:
 bun install
 ```
 
-To run (serves the static site on <http://localhost:3000>):
+To run (serves the static site on <http://localhost:3333>):
 
 ```bash
 bun run dev

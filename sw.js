@@ -1,6 +1,6 @@
 // Crater Weather service worker — tekee sovelluksesta asennettavan (PWA)
 // ja tarjoaa kevyen offline-välimuistin sovelluksen staattisille tiedostoille.
-const CACHE = "crater-v3";
+const CACHE = "crater-v6";
 
 // Sääpalvelut: näitä ei koskaan tallenneta välimuistiin (ennusteet vanhenevat).
 const FORECAST_HOSTS = ["api.met.no", "api.open-meteo.com"];
@@ -12,6 +12,7 @@ const ASSETS = [
   "./index.html",
   "./surfseeker.css",
   "./surfseeker.js",
+  "./spot3d.js",
   "./spots.geojson",
   "./craterweather.jpg",
   "./manifest.webmanifest",

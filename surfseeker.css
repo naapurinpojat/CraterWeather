@@ -114,3 +114,29 @@
 #surfseeker-panel.collapsed .ss-header {
   margin: 0;
 }
+
+/* Tuulikerros: otsikko + päälle/pois, liukusäädin ja nopeusselite */
+#surfseeker-panel .ss-wind-head {
+  align-items: center;
+  justify-content: space-between;
+}
+
+#surfseeker-panel #ssWindHour {
+  width: 100%;
+  margin-top: 6px;
+}
+
+#surfseeker-panel .ss-wind-legend {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 4px;
+  font-size: 10px;
+}
+
+#surfseeker-panel .ss-wind-legend span {
+  flex: 1;
+  text-align: center;
+  color: #111;
+  border-radius: 3px;
+}

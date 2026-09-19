@@ -47,6 +47,7 @@ const LS = {
   dirMode: "surfseeker_dir_mode", // "to" | "from"
   sport: "surfseeker_sport", // "windsurf" | "kitesurf" | "kitefoil" | "wingfoil"
   provider: "surfseeker_provider", // ks. PROVIDER_CHOICES
+  wind: "surfseeker_wind", // "1" | "0" — tuulikerros kartalla
 };
 
 // Ennustemallit. Tunnukset vastaavat index.html:n PROVIDERS-avaimia.
@@ -167,6 +168,18 @@ ready(() => {
       </div>
 
       <div class="ss-section">
+        <div class="ss-row ss-wind-head">
+          <b>Tuuli kartalla</b>
+          <span class="chip" id="ssWindChip"></span>
+        </div>
+        <div id="ssWindCtl">
+          <input type="range" id="ssWindHour" min="0" max="71" value="0" />
+          <div id="ssWindTime" class="ss-note"></div>
+          <div id="ssWindLegend" class="ss-wind-legend"></div>
+        </div>
+      </div>
+
+      <div class="ss-section">
         <div><b>Pikavalinnat</b></div>
         <div id="ssQuickRow" class="ss-row"></div>
       </div>
@@ -253,12 +266,59 @@ ready(() => {
     ssProviderStatus.textContent = "";
     applyProviderUI();
     refreshSpots();
+    wind.refresh(); // tuulikerros seuraa valittua mallia
   });
 
   // index.html kertoo tätä kautta esim. varalähteelle putoamisesta
   window.surfApp.onStatus = (msg) => {
     ssProviderStatus.textContent = msg || "";
   };
+
+  // 4c) tuulikerros (partikkelianimaatio, index.html: surfApp.wind)
+  const wind = window.surfApp.wind;
+  const windChip = panel.querySelector("#ssWindChip");
+  const windCtl = panel.querySelector("#ssWindCtl");
+  const windHour = panel.querySelector("#ssWindHour");
+  const windTime = panel.querySelector("#ssWindTime");
+  panel.querySelector("#ssWindLegend").innerHTML =
+    wind.colors
+      .map(
+        ([ms, col], i) =>
+          `<span style="background:${col}">${ms}${
+            i === wind.colors.length - 1 ? "+" : ""
+          }</span>`,
+      )
+      .join("") + " m/s";
+  function applyWindUI() {
+    const on = lsGet(LS.wind, "0") === "1";
+    windChip.textContent = on ? "Päällä" : "Pois";
+    windChip.classList.toggle("active", on);
+    windCtl.style.display = on ? "" : "none";
+    const times = wind.times;
+    windHour.max = Math.max(0, times.length - 1);
+    windHour.value = wind.hour;
+    const t = times[wind.hour];
+    windTime.textContent = t
+      ? new Date(t).toLocaleString("fi-FI", {
+          timeZone: "Europe/Helsinki",
+          weekday: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : on
+        ? "Haetaan tuulta…"
+        : "";
+  }
+  wind.onChange = applyWindUI;
+  windChip.addEventListener("click", () => {
+    const on = lsGet(LS.wind, "0") !== "1";
+    lsSet(LS.wind, on ? "1" : "0");
+    applyWindUI();
+    wind.setEnabled(on);
+  });
+  windHour.addEventListener("input", () => wind.setHour(+windHour.value));
+  applyWindUI();
+  wind.setEnabled(lsGet(LS.wind, "0") === "1");
 
   // 5) pikavalinnat
   const quickRow = panel.querySelector("#ssQuickRow");

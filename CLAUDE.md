@@ -12,12 +12,10 @@ Much of the code and all UI strings are in **Finnish**. Match that when editing.
 
 ```bash
 bun install        # install dev deps (only @types/bun + typescript)
-bun run dev        # serve the current directory on http://localhost:3000
+bun run dev        # serve the current directory on http://localhost:3333
 ```
 
 `server.ts` is a ~20-line Bun static file server used **only for local development** — it is not part of the deployed artifact. There are no tests, no linter, and no build/bundle step. Do not add a bundler expecting it to be required; the deployed site loads `index.html` and its assets directly.
-
-Note: the Dockerfile/devcontainer reference port 5173 but the server actually listens on 3000.
 
 ## Pre-commit
 
@@ -70,18 +68,26 @@ Heatmap of every spot (rows, sorted by `sectorMid` of `best_wind_dir`) against e
 - Cells get `mx-mid`/`mx-low` hatching when models disagree, but **only above `MATRIX_CONF_MIN_SCORE` (40)** — hatching gray 0-point hours is pure noise. The legend (`#matrixLegend`) renders only when `matrix.hasConf`.
 - Cells set `background-color` inline, **not** `background` — the shorthand would wipe out the hatching `background-image` coming from the CSS class.
 
+### Wind overlay (`surfApp.wind`)
+
+Animated wind particles over the map, toggled + time-slid (0–72 h) from the panel ("Tuuli kartalla", persisted as `surfseeker_wind`). Self-written canvas layer in `index.html` (pane `windPane`, z 450) — **not** leaflet-velocity, which assumes Web Mercator and breaks on EPSG:3067. Data is one Open-Meteo request for a 12×12 lat/lon grid over the view padded 50%, using the panel's model (consensus → ECMWF). Refetched only when the view leaves that grid, zoom grows ≥2, or the model changes. Screen points are projected to lat/lon once per move/hour into a 20 px screen grid, never per particle per frame (proj4 is too slow for that).
+
+### 3D spot view (`spot3d.js`)
+
+Experimental third popup tab ("🗺️ 3D"). `spot3d.js` is an ES module loaded **lazily** with `import("./spot3d.js")` on first open. three.js resolves through the `<script type="importmap">` in `<head>` (jsdelivr, pinned `three@0.170.0`), so it costs nothing until used. The ground is the same kapsi.fi MML tiles stitched onto a canvas (level 11 = 4 m/px, a 3 km square). This only works as a WebGL texture because that tile server sends `Access-Control-Allow-Origin: *`. EPSG:3067 is metric, so tiles map 1:1 onto a plane in metres. Arrows stay on water via a cyan/blue-pixel heuristic tuned to the peruskartta palette (lake water is ~`199,235,235`). The same mask traces the yellow **predicted sailing lines**: both beam-reach tacks (wind ±90°) from the spot to the shore, tolerating ≤60 m gaps for text and depth figures printed on the water. `index.html`'s `spot3dOptions()` passes the spot in TM35FIN metres, `sectorsOf(best_wind_dir)` and nearby hazard polygons. The view is disposed on `popupclose` — browsers allow only ~16 WebGL contexts.
+
 ### Map projection
 
 The map uses Finland's national CRS **EPSG:3067** (TM35FIN) via Proj4Leaflet, with MML (Maanmittauslaitos) base tiles. Coordinates in `spots.geojson` are plain WGS84 lon/lat; Leaflet handles the projection. The basemap is dimmed with a `filter: brightness(...)` on `.leaflet-tile-pane` only, so markers/popups/controls stay full-brightness.
 
-External libraries (Leaflet, axios, marked, proj4, proj4leaflet) are loaded from CDNs in `index.html` — there is no local dependency on them.
+External libraries (Leaflet, axios, marked, proj4, proj4leaflet, and three.js lazily for the 3D tab) are loaded from CDNs in `index.html` — there is no local dependency on them.
 
 ## PWA / installability
 
 The site is an installable Progressive Web App (Android home-screen / iOS Add to Home Screen):
 
 - `manifest.webmanifest` — app metadata + icons, `display: standalone`.
-- `sw.js` — service worker registered at the end of `index.html`. Caches the app shell **cache-first**, but **never caches the hosts in `FORECAST_HOSTS`** (`api.met.no`, `api.open-meteo.com`) so forecasts stay live — add any new forecast host there. Bump `CACHE` (`"crater-v3"`) whenever cached assets change, or clients keep stale files.
+- `sw.js` — service worker registered at the end of `index.html`. Caches the app shell **cache-first**, but **never caches the hosts in `FORECAST_HOSTS`** (`api.met.no`, `api.open-meteo.com`) so forecasts stay live — add any new forecast host there. Bump `CACHE` (`"crater-v6"`) whenever cached assets change, or clients keep stale files.
 - `icons/icon-192.png` + `icon-512.png` — the icons the manifest and `index.html` actually use.
 - **All PWA paths must stay relative (`./`).** The deployed site is a GitHub Pages _project_ site under `/CraterWeather/`; absolute `/…` paths resolve to the user-site root and break the manifest/SW/icons.
 - Service workers only run over HTTPS (GitHub Pages) or `localhost` — not over `file://`.
